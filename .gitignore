@@ -1,0 +1,63 @@
+# ============================================================
+# GlorySound — .gitignore
+# ============================================================
+
+# --- Dependencies ---------------------------------------------
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# --- Environment / secrets -------------------------------------
+.env
+.env.local
+.env.*.local
+!.env.example
+!.env.local.example
+
+# --- Logs -------------------------------------------------------
+logs/
+*.log
+npm-debug.log*
+backend/logs/
+postgresql/postgresql.log
+postgresql/data/logfile.txt
+
+# --- PostgreSQL portable (données + binaires) -------------------
+postgresql/data/
+postgresql/pgsql/
+
+# --- Runtime Node.js portable -----------------------------------
+node-v24.18.0-win-x64/
+
+# --- Archives / binaires tiers ------------------------------------
+others/
+
+# --- Fichiers médias / audio uploadés ----------------------------
+uploads/
+**/uploads/
+backend/uploads/
+frontend/public/uploads/
+*.mp3
+*.wav
+*.flac
+*.m4a
+
+# --- Next.js / build ----------------------------------------------
+frontend/.next/
+.next/
+out/
+build/
+dist/
+
+# --- Prisma -------------------------------------------------------
+backend/prisma/*.db
+
+# --- Divers / éditeurs / OS -----------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# --- Claude Code local ----------------------------------------------
+.claude/

@@ -1,0 +1,423 @@
+// ============================================================
+// GlorySound CMS — Prisma Schema (PostgreSQL)
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ── ENUMS ────────────────────────────────────────────────────
+
+enum Role {
+  SUPER_ADMIN
+  EDITEUR
+  CONTRIBUTEUR
+  MODERATEUR
+}
+
+enum PublicationStatus {
+  BROUILLON
+  PUBLIE
+  PLANIFIE
+  ARCHIVE
+}
+
+enum MediaPlatform {
+  YOUTUBE
+  FACEBOOK
+  VIMEO
+  TIKTOK
+  MP4
+}
+
+enum EventType {
+  CONCERT
+  CROISADE
+  CONFERENCE
+  EVANGELISATION
+}
+
+enum TestimonieType {
+  TEXTE
+  VIDEO
+  AUDIO
+}
+
+enum TestimonieStatus {
+  EN_ATTENTE
+  APPROUVE
+  REFUSE
+}
+
+enum GenreMusical {
+  GOSPEL_CONTEMPORAIN
+  GOSPEL_HAITIEN
+  LOUANGE_ADORATION
+  CHORALE
+  CHRISTIAN_RAP
+  AUTRE
+}
+
+// ── USERS ────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String?
+  nom           String
+  prenom        String
+  avatar        String?
+  role          Role      @default(CONTRIBUTEUR)
+  actif         Boolean   @default(true)
+  googleId      String?   @unique
+  facebookId    String?   @unique
+  refreshToken  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLogin     DateTime?
+
+  publications  Publication[]
+  videos        Video[]
+  musiques      Musique[]
+  evenements    Evenement[]
+
+  @@map("users")
+}
+
+// ── PUBLICATIONS ─────────────────────────────────────────────
+
+model Publication {
+  id              String            @id @default(cuid())
+  titre           String
+  sousTitre       String?
+  slug            String            @unique
+  contenu         String            // HTML from rich text editor
+  extrait         String?
+  imageUrl        String?
+  galerie         String[]          // Array of image URLs
+  status          PublicationStatus @default(BROUILLON)
+  publishedAt     DateTime?
+  scheduledAt     DateTime?
+  vues            Int               @default(0)
+  auteur          User              @relation(fields: [auteurId], references: [id])
+  auteurId        String
+  categorie       Categorie?        @relation(fields: [categorieId], references: [id])
+  categorieId     String?
+  tags            Tag[]
+  commentaires    Commentaire[]
+  metaTitre       String?
+  metaDescription String?
+  motsCles        String?
+  ogImage         String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@map("publications")
+}
+
+model Categorie {
+  id           String        @id @default(cuid())
+  nom          String        @unique
+  slug         String        @unique
+  description  String?
+  couleur      String?       // Hex color for UI
+  icon         String?       // FontAwesome class
+  publications Publication[]
+  createdAt    DateTime      @default(now())
+
+  @@map("categories")
+}
+
+model Tag {
+  id           String        @id @default(cuid())
+  nom          String        @unique
+  slug         String        @unique
+  publications Publication[]
+  createdAt    DateTime      @default(now())
+
+  @@map("tags")
+}
+
+model Commentaire {
+  id            String      @id @default(cuid())
+  contenu       String
+  auteurNom     String
+  auteurEmail   String
+  approuve      Boolean     @default(false)
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  publicationId String
+  parentId      String?
+  parent        Commentaire?  @relation("CommentaireParent", fields: [parentId], references: [id])
+  enfants       Commentaire[] @relation("CommentaireParent")
+  createdAt     DateTime    @default(now())
+
+  @@map("commentaires")
+}
+
+// ── VIDEOS ───────────────────────────────────────────────────
+
+model Video {
+  id            String        @id @default(cuid())
+  titre         String
+  description   String?
+  slug          String        @unique
+  platform      MediaPlatform
+  url           String        // Original URL or S3 path
+  embedId       String?       // YouTube/Vimeo ID
+  miniatureUrl  String?
+  vues          Int           @default(0)
+  duree         Int?          // seconds
+  status        PublicationStatus @default(BROUILLON)
+  publishedAt   DateTime?
+  ajoutePar     User?         @relation(fields: [ajouteParId], references: [id])
+  ajouteParId   String?
+  artiste       Artiste?      @relation(fields: [artisteId], references: [id])
+  artisteId     String?
+  categorie     String?
+  metaTitre     String?
+  metaDescription String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("videos")
+}
+
+// ── MUSIQUES ─────────────────────────────────────────────────
+
+model Musique {
+  id              String        @id @default(cuid())
+  titre           String
+  slug            String        @unique
+  fichierUrl      String        // S3 URL
+  couvertureUrl   String?
+  duree           Int?          // seconds
+  paroles         String?
+  genre           GenreMusical  @default(GOSPEL_CONTEMPORAIN)
+  dateSortie      DateTime?
+  ecoutes         Int           @default(0)
+  telechargements Int           @default(0)
+  telechargeablePublic Boolean  @default(true)
+  status          PublicationStatus @default(BROUILLON)
+  publishedAt     DateTime?
+  ajoutePar       User?         @relation(fields: [ajouteParId], references: [id])
+  ajouteParId     String?
+  artiste         Artiste       @relation(fields: [artisteId], references: [id])
+  artisteId       String
+  album           Album?        @relation(fields: [albumId], references: [id])
+  albumId         String?
+  metaTitre       String?
+  metaDescription String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("musiques")
+}
+
+// ── ARTISTES ─────────────────────────────────────────────────
+
+model Artiste {
+  id            String        @id @default(cuid())
+  nom           String
+  slug          String        @unique
+  photoUrl      String?
+  biographie    String?
+  genre         GenreMusical  @default(GOSPEL_CONTEMPORAIN)
+  facebook      String?
+  instagram     String?
+  youtube       String?
+  tiktok        String?
+  twitter       String?
+  site          String?
+  actif         Boolean       @default(true)
+  featured      Boolean       @default(false)
+  musiques      Musique[]
+  videos        Video[]
+  albums        Album[]
+  metaTitre     String?
+  metaDescription String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("artistes")
+}
+
+model Album {
+  id          String    @id @default(cuid())
+  titre       String
+  slug        String    @unique
+  annee       Int?
+  couverture  String?
+  description String?
+  artiste     Artiste   @relation(fields: [artisteId], references: [id])
+  artisteId   String
+  musiques    Musique[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("albums")
+}
+
+// ── ÉVÉNEMENTS ───────────────────────────────────────────────
+
+model Evenement {
+  id              String      @id @default(cuid())
+  titre           String
+  slug            String      @unique
+  description     String?
+  type            EventType   @default(CONCERT)
+  imageUrl        String?
+  dateDebut       DateTime
+  dateFin         DateTime?
+  heure           String?
+  lieu            String
+  adresse         String?
+  latitude        Float?
+  longitude       Float?
+  inscriptionUrl  String?
+  qrCodeUrl       String?
+  inscriptions    Int         @default(0)
+  capacite        Int?
+  entree          String?     // "Gratuit" or price
+  status          PublicationStatus @default(BROUILLON)
+  publishedAt     DateTime?
+  creePar         User        @relation(fields: [creeParId], references: [id])
+  creeParId       String
+  metaTitre       String?
+  metaDescription String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("evenements")
+}
+
+// ── GALERIE ──────────────────────────────────────────────────
+
+model Album_Photo {
+  id          String   @id @default(cuid())
+  titre       String
+  slug        String   @unique
+  description String?
+  couverture  String?
+  categorie   String?
+  photos      Photo[]
+  createdAt   DateTime @default(now())
+
+  @@map("albums_photos")
+}
+
+model Photo {
+  id          String       @id @default(cuid())
+  url         String
+  urlThumb    String?
+  alt         String?
+  legende     String?
+  ordre       Int          @default(0)
+  album       Album_Photo? @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  albumId     String?
+  createdAt   DateTime     @default(now())
+
+  @@map("photos")
+}
+
+// ── TÉMOIGNAGES ──────────────────────────────────────────────
+
+model Temoignage {
+  id            String           @id @default(cuid())
+  type          TestimonieType   @default(TEXTE)
+  contenu       String?          // For TEXTE type
+  mediaUrl      String?          // For VIDEO/AUDIO type
+  auteurNom     String
+  auteurEmail   String?
+  auteurPhoto   String?
+  titre         String?
+  status        TestimonieStatus @default(EN_ATTENTE)
+  approuvePar   String?
+  approuveAt    DateTime?
+  featured      Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@map("temoignages")
+}
+
+// ── NEWSLETTER ───────────────────────────────────────────────
+
+model Abonne {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  nom         String?
+  segment     String?   // "port-au-prince", "diaspora", etc.
+  actif       Boolean   @default(true)
+  confirme    Boolean   @default(false)
+  token       String?   @unique
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("abonnes")
+}
+
+model Campagne {
+  id          String    @id @default(cuid())
+  objet       String
+  contenu     String    // HTML email content
+  segment     String?
+  envoyes     Int       @default(0)
+  ouverts     Int       @default(0)
+  clics       Int       @default(0)
+  envoyeAt    DateTime?
+  planifieAt  DateTime?
+  status      String    @default("brouillon") // brouillon, planifie, envoye
+  createdAt   DateTime  @default(now())
+
+  @@map("campagnes")
+}
+
+// ── SEO SETTINGS ─────────────────────────────────────────────
+
+model SiteSettings {
+  id              String   @id @default(cuid())
+  cle             String   @unique
+  valeur          String
+  description     String?
+  updatedAt       DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+// ── MEDIA LIBRARY ────────────────────────────────────────────
+
+model MediaFile {
+  id          String   @id @default(cuid())
+  nom         String
+  url         String
+  urlThumb    String?
+  type        String   // image/jpeg, audio/mpeg, video/mp4
+  taille      Int      // bytes
+  cloudinaryId String?
+  s3Key       String?
+  dossier     String?
+  uploadePar  String
+  createdAt   DateTime @default(now())
+
+  @@map("media_files")
+}
+
+// ── ANALYTICS ────────────────────────────────────────────────
+
+model PageView {
+  id          String   @id @default(cuid())
+  path        String
+  referer     String?
+  userAgent   String?
+  ip          String?
+  createdAt   DateTime @default(now())
+
+  @@index([path])
+  @@index([createdAt])
+  @@map("page_views")
+}
