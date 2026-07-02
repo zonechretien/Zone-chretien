@@ -30,6 +30,9 @@ postgresql/pgsql/
 node-v24.18.0-win-x64/
 
 # --- Archives / binaires tiers ------------------------------------
+*.zip
+*.tar.gz
+*.7z
 others/
 
 # --- Fichiers médias / audio uploadés ----------------------------

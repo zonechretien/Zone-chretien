@@ -8,13 +8,21 @@
 
 $root = $PSScriptRoot
 
+# --- PATH node + claude disponibles dans cette fenêtre ------
+$claudeBin = "C:\Users\elianea\.local\bin"
+$nodeDir   = Join-Path $root "node-v24.18.0-win-x64\node-v24.18.0-win-x64"
+foreach ($p in @($claudeBin, $nodeDir)) {
+    if ((Test-Path $p) -and ($env:PATH -notlike "*$p*")) {
+        $env:PATH = "$p;$env:PATH"
+    }
+}
+
 # --- Chemins portables --------------------------------------
 $pgBin   = Join-Path $root "postgresql\pgsql\bin"
 $pgCtl   = Join-Path $pgBin "pg_ctl.exe"
 $pgData  = Join-Path $root "postgresql\data"
 $pgLog   = Join-Path $root "postgresql\postgresql.log"
 
-$nodeDir = Join-Path $root "node-v24.18.0-win-x64\node-v24.18.0-win-x64"
 $nodeExe = Join-Path $nodeDir "node.exe"
 $npmCmd  = Join-Path $nodeDir "npm.cmd"
 
@@ -50,12 +58,12 @@ else {
 # --- 2. Backend (port 4000) -----------------------------------
 Write-Host "Démarrage du backend (port 4000)..." -ForegroundColor Cyan
 $backendCommand = "`$Host.UI.RawUI.WindowTitle = 'GlorySound - Backend (4000)'; `$env:Path = '$nodeDir;' + `$env:Path; Set-Location '$backendDir'; & '$npmCmd' run dev"
-Start-Process powershell.exe -ArgumentList "-NoExit", "-Command", $backendCommand
+Start-Process powershell.exe -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", $backendCommand
 
 # --- 3. Frontend (port 3000) ----------------------------------
 Write-Host "Démarrage du frontend (port 3000)..." -ForegroundColor Cyan
 $frontendCommand = "`$Host.UI.RawUI.WindowTitle = 'GlorySound - Frontend (3000)'; `$env:Path = '$nodeDir;' + `$env:Path; Set-Location '$frontendDir'; & '$npmCmd' run dev"
-Start-Process powershell.exe -ArgumentList "-NoExit", "-Command", $frontendCommand
+Start-Process powershell.exe -ArgumentList "-ExecutionPolicy", "Bypass", "-NoExit", "-Command", $frontendCommand
 
 Write-Host ""
 Write-Host "Tout est lancé :" -ForegroundColor Green
