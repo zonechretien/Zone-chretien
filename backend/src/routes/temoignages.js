@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { prisma } from '../config/database.js';
 import { authenticate, authorize, ROLES } from '../middleware/auth.js';
 import { io } from '../server.js';
+import { sendAutoReply } from '../services/autoReply.js';
 
 const router = Router();
 
@@ -43,6 +44,8 @@ router.post('/', async (req, res, next) => {
     const t = await prisma.temoignage.create({
       data: { type, contenu, mediaUrl, auteurNom, auteurEmail, titre, status: 'EN_ATTENTE' },
     });
+    // Réponse auto IA (async — n'attend pas l'email pour répondre au client)
+    sendAutoReply({ auteurNom, auteurEmail, contenu, titre }).catch(() => {});
     res.status(201).json({ message: 'Témoignage soumis. En attente de validation.', id: t.id });
   } catch (err) { next(err); }
 });

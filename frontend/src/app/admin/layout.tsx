@@ -23,6 +23,7 @@ const NAV = [
   { label: 'Système', items: [
     { href: '/admin/utilisateurs', icon: '👥', label: 'Utilisateurs' },
     { href: '/admin/seo', icon: '🔍', label: 'SEO Global' },
+    { href: '/admin/agent', icon: '🤖', label: 'Agent IA' },
   ]},
 ];
 

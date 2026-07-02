@@ -32,6 +32,8 @@ import utilisateursRoutes from './routes/utilisateurs.js';
 import seoRoutes from './routes/seo.js';
 import mediaRoutes from './routes/media.js';
 import analyticsRoutes from './routes/analytics.js';
+import agentRoutes from './routes/agent.js';
+import { startScheduler } from './services/autoPublish.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -121,6 +123,7 @@ app.use('/api/utilisateurs', utilisateursRoutes);
 app.use('/api/seo', seoRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/agent', agentRoutes);
 
 // ── Search endpoint ───────────────────────────────────────────
 app.get('/api/search', async (req, res, next) => {
@@ -221,6 +224,7 @@ httpServer.listen(PORT, async () => {
   try {
     await prisma.$connect();
     logger.info('✅ Database connected');
+    startScheduler();
   } catch (err) {
     logger.error('❌ Database connection failed:', err);
     process.exit(1);

@@ -187,3 +187,12 @@ export const utilisateursAPI = {
   update: (id: string, data: unknown) => api.put(`/utilisateurs/${id}`, data),
   delete: (id: string) => api.delete(`/utilisateurs/${id}`),
 };
+
+export const agentAPI = {
+  status: () => api.get('/agent/status'),
+  enable: () => api.post('/agent/enable'),
+  disable: () => api.post('/agent/disable'),
+  triggerPublication: () => api.post('/agent/trigger/publication'),
+  triggerEvenement: () => api.post('/agent/trigger/evenement'),
+  triggerSuggestions: () => api.post('/agent/trigger/suggestions'),
+};
