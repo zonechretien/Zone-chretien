@@ -3,10 +3,10 @@ import type { Metadata } from 'next';
 import TemoignagesClient from './TemoignagesClient';
 
 export const metadata: Metadata = {
-  title: 'Témoignages — GlorySound',
-  description: 'Partagez comment Dieu a transformé votre vie. Découvrez les témoignages de la communauté GlorySound.',
+  title: 'Témoignages — Zone-Chrétien',
+  description: 'Partagez comment Dieu a transformé votre vie. Découvrez les témoignages de la communauté Zone-Chrétien.',
   openGraph: {
-    title: 'Témoignages — GlorySound',
+    title: 'Témoignages — Zone-Chrétien',
     description: 'Partagez comment Dieu a transformé votre vie.',
     type: 'website',
   },

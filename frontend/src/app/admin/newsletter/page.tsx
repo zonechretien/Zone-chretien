@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 
 function CampagneModal({ onClose }: { onClose: () => void }) {
   const qc = useQueryClient()
-  const [form, setForm] = useState({ sujet: '', contenu: '', nomExpediteur: 'GlorySound', emailExpediteur: 'newsletter@glorysound.ht' })
+  const [form, setForm] = useState({ sujet: '', contenu: '', nomExpediteur: 'Zone-Chrétien', emailExpediteur: 'newsletter@glorysound.ht' })
   const [saving, setSaving] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {

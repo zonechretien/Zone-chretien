@@ -277,7 +277,7 @@ export function NewsletterSection() {
     <section className="py-16" style={{ background: 'linear-gradient(135deg, var(--navy), var(--navy-mid))' }}>
       <div className="max-w-2xl mx-auto px-6 text-center">
         <div className="text-4xl mb-4">✉️</div>
-        <h2 className="font-display text-3xl font-bold text-white mb-3">Restez connecté à <span style={{ color: 'var(--gold)' }}>GlorySound</span></h2>
+        <h2 className="font-display text-3xl font-bold text-white mb-3">Restez connecté à <span style={{ color: 'var(--gold)' }}>Zone-Chrétien</span></h2>
         <p className="mb-8" style={{ color: 'rgba(255,255,255,.7)' }}>Recevez les dernières chansons, concerts et actualités gospel directement dans votre boîte mail.</p>
         <form className="flex gap-3 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
           <input type="email" placeholder="Votre email" required

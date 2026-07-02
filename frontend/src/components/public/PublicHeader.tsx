@@ -68,7 +68,7 @@ export function PublicHeader() {
             <div className="w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold"
               style={{ background: 'linear-gradient(135deg, var(--navy), var(--blue))', color: 'var(--gold)' }}>♪</div>
             <div>
-              <div className="font-accent text-xl tracking-widest" style={{ color: 'var(--navy)', letterSpacing: '2px' }}>GLORYSOUND</div>
+              <div className="font-accent text-xl tracking-widest" style={{ color: 'var(--navy)', letterSpacing: '2px' }}>ZONE-CHRÉTIEN</div>
               <div className="text-xs tracking-widest uppercase" style={{ color: 'var(--gray)', fontSize: '9px' }}>Gospel & Musique Chrétienne</div>
             </div>
           </Link>

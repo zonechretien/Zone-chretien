@@ -151,7 +151,7 @@ export default function VideosPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-white flex items-center gap-3"><Video className="w-7 h-7 text-gold-400" />Vidéos</h1>
-          <p className="text-gray-400 text-sm mt-1">Gérer la vidéothèque GlorySound</p>
+          <p className="text-gray-400 text-sm mt-1">Gérer la vidéothèque Zone-Chrétien</p>
         </div>
         <button onClick={() => { setSelected(null); setModal('create') }}
           className="flex items-center gap-2 px-5 py-2.5 bg-gold-500 hover:bg-gold-400 text-navy-900 font-bold rounded-xl transition-colors">

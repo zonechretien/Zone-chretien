@@ -261,7 +261,7 @@ export default function MusiquesPage() {
             <Music className="w-7 h-7 text-gold-400" />
             Musiques
           </h1>
-          <p className="text-gray-400 text-sm mt-1">Gérer la discothèque GlorySound</p>
+          <p className="text-gray-400 text-sm mt-1">Gérer la discothèque Zone-Chrétien</p>
         </div>
         <button onClick={() => { setSelected(null); setModal('create') }}
           className="flex items-center gap-2 px-5 py-2.5 bg-gold-500 hover:bg-gold-400 text-navy-900 font-bold rounded-xl transition-colors">

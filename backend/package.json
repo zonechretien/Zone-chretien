@@ -1,7 +1,7 @@
 {
   "name": "glorysound-backend",
   "version": "1.0.0",
-  "description": "GlorySound CMS — API Backend",
+  "description": "Zone-Chrétien CMS — API Backend",
   "main": "src/server.js",
   "type": "module",
   "scripts": {

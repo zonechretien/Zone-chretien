@@ -38,7 +38,7 @@ export default function ConnexionPage() {
           <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '64px', height: '64px', background: 'linear-gradient(135deg, #E8A020, #d4911c)', borderRadius: '16px', marginBottom: '1rem' }}>
             <Music size={32} color="white" />
           </div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'white', letterSpacing: '0.1em', marginBottom: '4px' }}>GLORYSOUND</h1>
+          <h1 style={{ fontSize: '2rem', fontWeight: 700, color: 'white', letterSpacing: '0.1em', marginBottom: '4px' }}>ZONE-CHRÉTIEN</h1>
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <Shield size={13} style={{ color: '#E8A020' }} /> Espace Administrateur
           </p>
@@ -82,7 +82,7 @@ export default function ConnexionPage() {
           </form>
 
           <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid rgba(255,255,255,0.08)', textAlign: 'center' }}>
-            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>Accès réservé à l&apos;équipe GlorySound</p>
+            <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)' }}>Accès réservé à l&apos;équipe Zone-Chrétien</p>
           </div>
         </div>
 

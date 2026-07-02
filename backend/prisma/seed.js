@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding GlorySound database...');
+  console.log('🌱 Seeding Zone-Chrétien database...');
 
   // ── Admin user ──────────────────────────────────────────────
   const adminPassword = await bcrypt.hash(process.env.ADMIN_PASSWORD || 'GlorySound2026!', 12);
@@ -96,11 +96,11 @@ async function main() {
 
   // ── SEO settings ────────────────────────────────────────────
   const seoSettings = [
-    { cle: 'site_titre', valeur: 'GlorySound — Plateforme Gospel & Musique Chrétienne' },
-    { cle: 'site_description', valeur: 'Découvrez les meilleures chansons gospel, artistes chrétiens, concerts et actualités de la foi sur GlorySound.' },
+    { cle: 'site_titre', valeur: 'Zone-Chrétien — Plateforme Gospel & Musique Chrétienne' },
+    { cle: 'site_description', valeur: 'Découvrez les meilleures chansons gospel, artistes chrétiens, concerts et actualités de la foi sur Zone-Chrétien.' },
     { cle: 'site_mots_cles', valeur: 'gospel, musique chrétienne, Haïti, louange, adoration' },
     { cle: 'site_url', valeur: 'https://glorysound.ht' },
-    { cle: 'og_titre', valeur: 'GlorySound — Gospel & Musique Chrétienne 🎵' },
+    { cle: 'og_titre', valeur: 'Zone-Chrétien — Gospel & Musique Chrétienne 🎵' },
     { cle: 'twitter_card', valeur: 'summary_large_image' },
     { cle: 'google_analytics_id', valeur: 'G-XXXXXXXXXX' },
   ];
@@ -110,7 +110,7 @@ async function main() {
   }
   console.log('✅ Paramètres SEO créés');
 
-  console.log('\n🎵 GlorySound database seeded successfully!');
+  console.log('\n🎵 Zone-Chrétien database seeded successfully!');
   console.log(`👤 Admin: ${admin.email}`);
 }
 

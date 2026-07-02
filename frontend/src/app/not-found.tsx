@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Page introuvable — GlorySound',
+  title: 'Page introuvable — Zone-Chrétien',
 };
 
 export default function NotFound() {

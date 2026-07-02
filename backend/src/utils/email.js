@@ -23,7 +23,7 @@ export const sendEmail = async ({ to, subject, html, text }) => {
   try {
     const t = getTransporter();
     const info = await t.sendMail({
-      from: process.env.EMAIL_FROM || '"GlorySound" <contact@glorysound.ht>',
+      from: process.env.EMAIL_FROM || '"Zone-Chrétien" <contact@glorysound.ht>',
       to,
       subject,
       html,

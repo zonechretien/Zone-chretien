@@ -14,7 +14,7 @@ import {
 } from '@/components/public/Sections';
 
 export const metadata: Metadata = {
-  title: 'GlorySound — Plateforme Gospel & Musique Chrétienne',
+  title: 'Zone-Chrétien — Plateforme Gospel & Musique Chrétienne',
   description: 'La plateforme gospel en Haïti. Musique, artistes, concerts et Parole de Dieu.',
 };
 

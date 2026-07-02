@@ -24,20 +24,20 @@ const bebasNeue = Bebas_Neue({
 });
 
 export const metadata: Metadata = {
-  title: { default: 'GlorySound — Plateforme Gospel & Musique Chrétienne', template: '%s | GlorySound' },
-  description: 'Découvrez les meilleures chansons gospel, artistes chrétiens, concerts et actualités de la foi sur GlorySound.',
+  title: { default: 'Zone-Chrétien — Plateforme Gospel & Musique Chrétienne', template: '%s | Zone-Chrétien' },
+  description: 'Découvrez les meilleures chansons gospel, artistes chrétiens, concerts et actualités de la foi sur Zone-Chrétien.',
   keywords: ['gospel', 'musique chrétienne', 'Haïti', 'louange', 'adoration', 'artistes gospel'],
-  authors: [{ name: 'GlorySound' }],
+  authors: [{ name: 'Zone-Chrétien' }],
   openGraph: {
     type: 'website',
     locale: 'fr_HT',
     url: 'https://glorysound.ht',
-    siteName: 'GlorySound',
-    title: 'GlorySound — Gospel & Musique Chrétienne 🎵',
+    siteName: 'Zone-Chrétien',
+    title: 'Zone-Chrétien — Gospel & Musique Chrétienne 🎵',
     description: 'La plateforme gospel en Haïti. Musique, artistes, concerts et Parole de Dieu.',
-    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'GlorySound' }],
+    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Zone-Chrétien' }],
   },
-  twitter: { card: 'summary_large_image', title: 'GlorySound', description: 'La plateforme gospel en Haïti.' },
+  twitter: { card: 'summary_large_image', title: 'Zone-Chrétien', description: 'La plateforme gospel en Haïti.' },
   robots: { index: true, follow: true },
 };
 

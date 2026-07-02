@@ -51,7 +51,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="w-9 h-9 rounded-xl flex items-center justify-center font-bold text-lg flex-shrink-0"
             style={{ background: 'linear-gradient(135deg, var(--blue), var(--gold))', color: 'var(--navy)' }}>♪</div>
           <div>
-            <div className="font-accent text-lg tracking-widest text-white">GLORYSOUND</div>
+            <div className="font-accent text-lg tracking-widest text-white">ZONE-CHRÉTIEN</div>
             <div className="text-xs tracking-widest" style={{ color: 'var(--gray)', fontSize: '9px', textTransform: 'uppercase' }}>CMS Admin</div>
           </div>
         </div>

@@ -38,7 +38,7 @@ export function PublicFooter() {
                 <Music className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="font-bebas text-2xl text-white tracking-wider">GLORYSOUND</p>
+                <p className="font-bebas text-2xl text-white tracking-wider">ZONE-CHRÉTIEN</p>
                 <p className="text-xs text-gold-400 -mt-1">Gospel & Louange</p>
               </div>
             </div>
@@ -132,7 +132,7 @@ export function PublicFooter() {
       <div className="border-t border-navy-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} GlorySound. Tous droits réservés.
+            © {new Date().getFullYear()} Zone-Chrétien. Tous droits réservés.
           </p>
           <p className="text-gray-500 text-sm flex items-center gap-1">
             Fait avec <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" /> pour la gloire de Dieu

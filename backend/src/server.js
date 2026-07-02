@@ -1,5 +1,5 @@
 // ============================================================
-// GlorySound CMS — Express Server
+// Zone-Chrétien CMS — Express Server
 // ============================================================
 
 import 'dotenv/config';
@@ -216,7 +216,7 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 4000;
 
 httpServer.listen(PORT, async () => {
-  logger.info(`🎵 GlorySound API running on http://localhost:${PORT}`);
+  logger.info(`🎵 Zone-Chrétien API running on http://localhost:${PORT}`);
   logger.info(`📊 Environment: ${process.env.NODE_ENV}`);
   try {
     await prisma.$connect();

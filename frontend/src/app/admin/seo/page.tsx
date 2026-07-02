@@ -88,7 +88,7 @@ export default function SeoPage() {
           <h2 className="text-white font-semibold flex items-center gap-2">
             <Globe className="w-4 h-4 text-gold-400" />Informations du site
           </h2>
-          <InputField label="Nom du site" field="nomSite" placeholder="GlorySound" />
+          <InputField label="Nom du site" field="nomSite" placeholder="Zone-Chrétien" />
           <TextareaField label="Description du site" field="descriptionSite" placeholder="La plateforme de référence..." />
           <InputField label="URL du site" field="urlSite" placeholder="https://glorysound.ht" />
           <InputField label="Email de contact" field="emailContact" type="email" />

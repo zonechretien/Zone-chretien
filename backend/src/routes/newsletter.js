@@ -29,16 +29,16 @@ router.post(
       // Send confirmation email
       await sendEmail({
         to: email,
-        subject: '✦ Confirmez votre inscription — GlorySound',
+        subject: '✦ Confirmez votre inscription — Zone-Chrétien',
         html: `
-          <h2>Bienvenue sur GlorySound!</h2>
+          <h2>Bienvenue sur Zone-Chrétien!</h2>
           <p>Bonjour ${nom || 'ami(e)'},</p>
           <p>Cliquez sur le lien pour confirmer votre inscription à notre newsletter gospel:</p>
-          <a href="${process.env.FRONTEND_URL}/newsletter/confirmer?token=${token}" 
+          <a href="${process.env.FRONTEND_URL}/newsletter/confirmer?token=${token}"
              style="background:#E8A020;color:#0A1628;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;display:inline-block;margin:16px 0">
             Confirmer mon inscription ✦
           </a>
-          <p>À la grâce de Dieu,<br><strong>L'équipe GlorySound</strong></p>
+          <p>À la grâce de Dieu,<br><strong>L'équipe Zone-Chrétien</strong></p>
         `,
       }).catch(() => {}); // Don't fail if email fails
 
@@ -59,7 +59,7 @@ router.get('/confirmer', async (req, res, next) => {
       data: { confirme: true, token: null },
     });
 
-    res.json({ message: 'Inscription confirmée! Bienvenue dans la famille GlorySound.' });
+    res.json({ message: 'Inscription confirmée! Bienvenue dans la famille Zone-Chrétien.' });
   } catch (err) { next(err); }
 });
 
