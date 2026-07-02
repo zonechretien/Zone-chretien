@@ -6,8 +6,8 @@ export const revalidate = 60
 
 async function getEvenements() {
   try {
-    const res = await evenementsAPI.getAll({ limit: 20, statut: 'PUBLIE' })
-    return res.data?.evenements || []
+    const res = await evenementsAPI.getAll({ limit: 20, status: 'PUBLIE' })
+    return res.data?.data || []
   } catch { return [] }
 }
 
@@ -22,6 +22,7 @@ export default async function EvenementsPage() {
     const dateObj = new Date(event.dateDebut)
 
     return (
+      <Link href={`/evenements/${event.slug}`} className="block no-underline">
       <div className={`bg-navy-900 border rounded-2xl overflow-hidden hover:border-gold-500/40 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 ${isPast ? 'border-navy-700 opacity-70' : 'border-navy-700'}`}>
         {event.imageUrl && (
           <div className="relative h-40 overflow-hidden">
@@ -61,29 +62,30 @@ export default async function EvenementsPage() {
             {event.lieu && (
               <div className="flex items-center gap-2">
                 <MapPin className="w-3.5 h-3.5 shrink-0" />
-                <span>{event.lieu}, {event.ville}</span>
+                <span>{event.lieu}{event.adresse ? `, ${event.adresse}` : ''}</span>
               </div>
             )}
-            {event.capaciteMax && (
+            {event.capacite && (
               <div className="flex items-center gap-2">
                 <Users className="w-3.5 h-3.5 shrink-0" />
-                <span>{event._count?.inscriptions || 0} inscrits / {event.capaciteMax} places</span>
+                <span>{event.inscriptions || 0} inscrits / {event.capacite} places</span>
               </div>
             )}
           </div>
 
           <div className="flex items-center justify-between">
-            <span className={`text-sm font-semibold ${event.estGratuit ? 'text-green-400' : 'text-gold-400'}`}>
-              {event.estGratuit ? '✓ Entrée gratuite' : `${event.prix} HTG`}
+            <span className={`text-sm font-semibold ${event.entree === 'Gratuit' ? 'text-green-400' : 'text-gold-400'}`}>
+              {event.entree === 'Gratuit' ? '✓ Entrée gratuite' : (event.entree || 'Voir détails')}
             </span>
             {!isPast && (
-              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-gold-500 hover:bg-gold-400 text-navy-900 font-bold text-sm rounded-lg transition-colors">
-                <CheckCircle className="w-3.5 h-3.5" />S'inscrire
-              </button>
+              <span className="flex items-center gap-1.5 px-3 py-1.5 bg-gold-500 text-navy-900 font-bold text-sm rounded-lg">
+                <CheckCircle className="w-3.5 h-3.5" />Détails
+              </span>
             )}
           </div>
         </div>
       </div>
+      </Link>
     )
   }
 

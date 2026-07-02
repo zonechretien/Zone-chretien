@@ -79,8 +79,9 @@ export async function generatePublication({ force = false } = {}) {
   const topic = TOPICS[topicIndex % TOPICS.length];
   topicIndex++;
 
-  // Picsum : seed fixe par sujet → image cohérente et toujours disponible
-  const imageUrl = `https://picsum.photos/seed/${topic.seed}/800/400`;
+  // Picsum : seed unique par publication (topic + timestamp) → image différente à chaque fois
+  const seed = `${topic.seed}-${Date.now()}`;
+  const imageUrl = `https://picsum.photos/seed/${seed}/800/400`;
   const raw = await generateText(SYS_PUBLICATION, `Rédige un article complet sur : ${topic.sujet}`, 4000);
 
   const data = extractJSON(raw);
