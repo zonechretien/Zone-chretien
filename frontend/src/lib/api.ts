@@ -198,4 +198,9 @@ export const agentAPI = {
   triggerSuggestions: () => api.post('/agent/trigger/suggestions'),
   triggerVideo: () => api.post('/agent/trigger/video'),
   triggerMusique: () => api.post('/agent/trigger/musique'),
+  triggerDiscovery: () => api.post('/agent/trigger/discovery'),
+  sources: (params?: Record<string, unknown>) => api.get('/agent/sources', { params }),
+  approveSource: (id: string) => api.post(`/agent/sources/${id}/approve`),
+  ignoreSource: (id: string) => api.post(`/agent/sources/${id}/ignore`),
+  approveAllSources: () => api.post('/agent/sources/approve-all'),
 };

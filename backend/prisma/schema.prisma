@@ -407,6 +407,36 @@ model MediaFile {
   @@map("media_files")
 }
 
+// ── AGENT IA : DÉCOUVERTE MULTI-SOURCES ─────────────────────
+
+enum SourceStatut {
+  NOUVEAU
+  PUBLIE
+  IGNORE
+}
+
+model SourceContent {
+  id          String       @id @default(cuid())
+  type        String       // MUSIQUE, VIDEO, ACTUALITE
+  plateforme  String       // YOUTUBE, SPOTIFY, RSS
+  categorie   String       // gospel-haitien, gospel-americain, gospel-latino, gospel-africain, worship-international
+  titre       String
+  artiste     String?
+  url         String       @unique
+  imageUrl    String?
+  extrait     String?
+  statut      SourceStatut @default(NOUVEAU)
+  metadata    String?      // JSON libre (embedId, duree, etc.)
+  publishedType String?    // 'musique' | 'video' | 'publication' une fois approuvé
+  publishedId String?
+  decouvertAt DateTime     @default(now())
+  traiteAt    DateTime?
+
+  @@index([statut])
+  @@index([plateforme])
+  @@map("source_contents")
+}
+
 // ── ANALYTICS ────────────────────────────────────────────────
 
 model PageView {

@@ -1,7 +1,8 @@
 // Publications et événements automatiques — planifiés avec node-cron
 import cron from 'node-cron';
 import slugify from 'slugify';
-import { generateText, isAgentEnabled, getAdminUser, logAction } from './aiAgent.js';
+import { generateText, generateTextWithSearch, isAgentEnabled, getAdminUser, logAction, findOrCreateArtiste } from './aiAgent.js';
+import { discoverMusicSpotify, discoverVideosYoutube, discoverActualitesRSS } from './discovery.js';
 import { prisma } from '../config/database.js';
 import { logger } from '../utils/logger.js';
 
@@ -32,11 +33,64 @@ function extractJSON(text) {
 
 // ── Prompts système ───────────────────────────────────────────
 
-const SYS_PUBLICATION = `Tu es le rédacteur en chef de Zone-Chrétien, la plateforme de référence du gospel haïtien.
-Tu rédiges des articles engageants, spirituellement riches, en français.
+const SYS_PUBLICATION = `Tu es le rédacteur officiel de Zone-Chrétien, une plateforme
+gospel haïtienne. Tu dois générer UNIQUEMENT du contenu chrétien
+évangélique authentique.
+
+SUJETS OBLIGATOIRES (alterne entre ces catégories) :
+- Artistes gospel haïtiens réels : Stanley Georges, BélO, Joël Lorquet,
+  Delly Benson, Neguswed, Frère Gama, Pastor Gregory, Mikael ft Réveil,
+  Kesner Duperval, James Cadet, Bunel Charles, Guyto
+- Artistes gospel internationaux : Kirk Franklin, Tasha Cobbs,
+  Travis Greene, Elevation Worship, Hillsong, Chris Tomlin,
+  Lauren Daigle, Maverick City Music, Sinach, Nathaniel Bassey
+- Actualités évangéliques : concerts gospel en Haïti,
+  festivals chrétiens, sorties d'albums gospel,
+  témoignages de conversion, réveil spirituel
+- Versets bibliques commentés avec application pratique
+- Histoire du gospel haïtien et son impact culturel
+- Événements chrétiens internationaux (Grammy Gospel, Stellar Awards)
+
+FORMAT REQUIS :
+- Titre accrocheur et spirituellement inspirant
+- Contenu de 300-500 mots en français
+- Toujours mentionner des noms réels d'artistes ou événements réels
+- Terminer par un verset biblique pertinent
+- Catégorie : ACTUALITE, TEMOIGNAGE, ou MUSIQUE
+
+INTERDIT : contenu non chrétien, politique, sport, divertissement séculier
+
+Utilise systématiquement les résultats de ta recherche web pour t'appuyer sur des faits réels et récents avant de rédiger — ne rédige jamais sans avoir cherché au préalable.
+
 RÈGLE ABSOLUE : Ta réponse doit commencer DIRECTEMENT par { et se terminer par }. Zéro texte avant ou après. Zéro bloc markdown. Zéro commentaire.
 Format JSON :
-{"titre":"...","sousTitre":"...","extrait":"...","contenu":"<p>HTML 400+ mots</p>"}`;
+{"titre":"...","sousTitre":"...","extrait":"...","contenu":"<p>HTML 300-500 mots</p>","categorie":"ACTUALITE"}
+"categorie" doit être exactement l'une de ces valeurs : "ACTUALITE", "TEMOIGNAGE", "MUSIQUE".`;
+
+// Noms réels d'artistes/événements chrétiens exigés par le prompt — sert à vérifier
+// qu'un article généré en contient bien au moins un avant publication.
+const KNOWN_CHRISTIAN_NAMES = [
+  'Stanley Georges', 'BélO', 'Joël Lorquet', 'Delly Benson', 'Neguswed', 'Frère Gama',
+  'Pastor Gregory', 'Mikael', 'Réveil', 'Kesner Duperval', 'James Cadet', 'Bunel Charles', 'Guyto',
+  'Kirk Franklin', 'Tasha Cobbs', 'Travis Greene', 'Elevation Worship', 'Hillsong', 'Chris Tomlin',
+  'Lauren Daigle', 'Maverick City Music', 'Sinach', 'Nathaniel Bassey',
+  'Grammy Gospel', 'Stellar Awards',
+];
+
+function containsRealChristianName(text) {
+  const haystack = text.toLowerCase();
+  return KNOWN_CHRISTIAN_NAMES.some((name) => haystack.includes(name.toLowerCase()));
+}
+
+const CATEGORIE_LABELS = { ACTUALITE: 'Actualité', TEMOIGNAGE: 'Témoignage', MUSIQUE: 'Musique' };
+
+async function findOrCreateCategorie(value) {
+  const nom = CATEGORIE_LABELS[value] || CATEGORIE_LABELS.ACTUALITE;
+  const slug = makeSlug(nom);
+  let cat = await prisma.categorie.findUnique({ where: { slug } });
+  if (!cat) cat = await prisma.categorie.create({ data: { nom, slug } });
+  return cat;
+}
 
 const SYS_EVENEMENT = `Tu es responsable des événements de Zone-Chrétien.
 Tu génères des événements chrétiens/gospel réalistes à venir en Haïti ou pour la diaspora.
@@ -89,16 +143,6 @@ const SOUNDHELIX_TRACKS = Array.from({ length: 9 }, (_, i) => `https://www.sound
 let videoIndex = 0;
 let audioIndex = 0;
 
-// Trouve ou crée l'artiste par son nom (utilisé par vidéos et suggestions musicales)
-async function findOrCreateArtiste(nom, genre = 'GOSPEL_CONTEMPORAIN') {
-  const slug = makeSlug(nom);
-  let artiste = await prisma.artiste.findUnique({ where: { slug } });
-  if (!artiste) {
-    artiste = await prisma.artiste.create({ data: { nom, slug, genre, actif: true } });
-  }
-  return artiste;
-}
-
 // Recherche une vidéo gospel via YouTube Data API v3 (si YOUTUBE_API_KEY configurée)
 async function searchYouTubeGospelVideo() {
   if (!process.env.YOUTUBE_API_KEY) return null;
@@ -129,17 +173,14 @@ async function searchYouTubeGospelVideo() {
 }
 
 // Seeds Picsum stables (toujours la même image pour le même seed)
+// + requête de recherche web suggérée pour ancrer l'article dans des faits réels.
 const TOPICS = [
-  { sujet: 'Un artiste gospel haïtien influent : son parcours, son impact spirituel et ses chansons phares', seed: 'gospel-artist' },
-  { sujet: 'Le verset biblique de la semaine : méditation profonde sur la louange et l\'adoration', seed: 'bible-verse' },
-  { sujet: 'Actualité internationale : les tendances du gospel contemporain et leur influence en Haïti', seed: 'gospel-concert' },
-  { sujet: 'Un message d\'encouragement spirituel pour les chrétiens haïtiens face aux défis quotidiens', seed: 'faith-hope' },
-  { sujet: 'Histoire et héritage : les origines du gospel haïtien et son rayonnement mondial', seed: 'gospel-heritage' },
-  { sujet: 'Jeunesse et foi : comment le gospel contemporain touche la nouvelle génération chrétienne', seed: 'worship-youth' },
-  { sujet: 'Focus sur un groupe de louange haïtien : ministère, albums et vision spirituelle', seed: 'praise-worship' },
-  { sujet: 'La puissance de l\'adoration collective : témoignages et bienfaits du chant en communauté', seed: 'church-community' },
-  { sujet: 'Portrait d\'un artiste évangélique haïtien de la diaspora et son influence internationale', seed: 'gospel-singer' },
-  { sujet: 'Analyse spirituelle d\'un hymne traditionnel haïtien chanté dans les églises du monde entier', seed: 'church-hymn' },
+  { sujet: 'Un artiste gospel haïtien réel (voir la liste du prompt système) : son actualité, ses chansons phares et son impact spirituel', query: 'gospel haïtien actualité 2026', seed: 'gospel-artist' },
+  { sujet: 'Un artiste gospel international réel (voir la liste du prompt système) : son actualité et son influence sur le gospel haïtien', query: 'musique évangélique internationale 2026', seed: 'gospel-artist-intl' },
+  { sujet: 'Actualité évangélique récente : concert gospel en Haïti, festival chrétien, sortie d\'album, témoignage de conversion ou réveil spirituel', query: 'gospel haïtien actualité 2026', seed: 'gospel-concert' },
+  { sujet: 'Le verset biblique de la semaine : méditation et application pratique pour les chrétiens haïtiens', query: 'gospel haïtien actualité 2026', seed: 'bible-verse' },
+  { sujet: 'Histoire et héritage : les origines du gospel haïtien et son rayonnement culturel', query: 'gospel haïtien actualité 2026', seed: 'gospel-heritage' },
+  { sujet: 'Un événement chrétien international récent (Grammy Gospel, Stellar Awards) et ce qu\'il révèle du gospel mondial', query: 'musique évangélique internationale 2026', seed: 'gospel-awards' },
 ];
 
 let topicIndex = 0;
@@ -161,13 +202,24 @@ export async function generatePublication({ force = false } = {}) {
   // Picsum : seed unique par publication (topic + timestamp) → image différente à chaque fois
   const seed = `${topic.seed}-${Date.now()}`;
   const imageUrl = `https://picsum.photos/seed/${seed}/800/400`;
-  const raw = await generateText(SYS_PUBLICATION, `Rédige un article complet sur : ${topic.sujet}`, 4000);
+  const raw = await generateTextWithSearch(
+    SYS_PUBLICATION,
+    `Recherche d'abord sur le web des informations réelles et récentes avec une requête comme "${topic.query}", puis rédige un article sur : ${topic.sujet}`,
+    4000
+  );
 
   const data = extractJSON(raw);
 
   if (!data.titre || !data.contenu) {
     throw new Error('Réponse Claude incomplète — champs titre ou contenu manquants');
   }
+
+  const plainText = `${data.titre} ${data.sousTitre || ''} ${data.extrait || ''} ${(data.contenu || '').replace(/<[^>]+>/g, ' ')}`;
+  if (!containsRealChristianName(plainText)) {
+    throw new Error("Article rejeté : aucun nom d'artiste ou événement chrétien réel détecté dans le contenu généré.");
+  }
+
+  const categorie = await findOrCreateCategorie(data.categorie);
 
   let slug = makeSlug(data.titre);
   const exists = await prisma.publication.findUnique({ where: { slug } });
@@ -184,6 +236,7 @@ export async function generatePublication({ force = false } = {}) {
       status: 'PUBLIE',
       publishedAt: new Date(),
       auteurId: admin.id,
+      categorieId: categorie.id,
       metaTitre: data.titre,
       metaDescription: data.extrait || null,
       motsCles: 'gospel,zone-chretien,agent-ia',
@@ -444,5 +497,23 @@ export function startScheduler() {
     catch (err) { logAction('suggestions', `Top50 snapshot — ${err.message}`, false); }
   });
 
-  logger.info('🤖 Agent IA Zone-Chrétien — Planificateur démarré (3 pub/j · 2 vidéos/j · 1 sugg. musique/j · 1 event/sem · 1 sugg. tendances/sem · snapshot Top50/lun)');
+  // Découverte multi-sources — Spotify (musique) : toutes les 2h
+  cron.schedule('0 */2 * * *', async () => {
+    try { await discoverMusicSpotify(); }
+    catch (err) { logAction('decouverte', `Cron Spotify — ${err.message}`, false); }
+  });
+
+  // Découverte multi-sources — YouTube (vidéos) : 4 fois par jour
+  cron.schedule('0 2,8,14,20 * * *', async () => {
+    try { await discoverVideosYoutube(); }
+    catch (err) { logAction('decouverte', `Cron YouTube — ${err.message}`, false); }
+  });
+
+  // Découverte multi-sources — RSS (actualités évangéliques) : toutes les 3h
+  cron.schedule('0 */3 * * *', async () => {
+    try { await discoverActualitesRSS(); }
+    catch (err) { logAction('decouverte', `Cron RSS — ${err.message}`, false); }
+  });
+
+  logger.info('🤖 Agent IA Zone-Chrétien — Planificateur démarré (3 pub/j · 2 vidéos/j · 1 sugg. musique/j · 1 event/sem · 1 sugg. tendances/sem · snapshot Top50/lun · découverte multi-sources)');
 }

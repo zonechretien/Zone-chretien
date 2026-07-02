@@ -6,13 +6,14 @@ import { musiquesAPI } from '@/lib/api';
 
 // ── URL type detection ────────────────────────────────────────
 
-type AudioType = 'direct' | 'soundcloud' | 'youtube';
+type AudioType = 'direct' | 'soundcloud' | 'youtube' | 'spotify';
 
 function detectAudioType(url: string): AudioType {
   if (!url) return 'direct';
   const u = url.toLowerCase();
   if (u.includes('soundcloud.com')) return 'soundcloud';
   if (u.includes('youtube.com') || u.includes('youtu.be')) return 'youtube';
+  if (u.includes('open.spotify.com')) return 'spotify';
   return 'direct';
 }
 
@@ -31,10 +32,17 @@ function youTubeEmbedUrl(url: string): string {
   return id ? `https://www.youtube.com/embed/${id}?autoplay=1&rel=0` : '';
 }
 
+function spotifyEmbedUrl(url: string): string {
+  const m = url.match(/track\/([a-zA-Z0-9]+)/);
+  const id = m?.[1];
+  return id ? `https://open.spotify.com/embed/track/${id}?utm_source=generator&theme=0` : '';
+}
+
 const PLATFORM_LABELS: Record<AudioType, string> = {
   direct: '',
   soundcloud: 'SoundCloud',
   youtube: 'YouTube',
+  spotify: 'Spotify',
 };
 
 // ── Component ─────────────────────────────────────────────────
@@ -82,14 +90,16 @@ export function AudioPlayerBar() {
 
   if (!currentTrack) return null;
 
-  // ── Embedded player (SoundCloud or YouTube) ───────────────────
+  // ── Embedded player (SoundCloud, YouTube or Spotify) ───────────
   if (!isDirect) {
     const embedSrc = audioType === 'soundcloud'
       ? soundCloudEmbedUrl(currentTrack.audioUrl)
+      : audioType === 'spotify'
+      ? spotifyEmbedUrl(currentTrack.audioUrl)
       : youTubeEmbedUrl(currentTrack.audioUrl);
 
-    // SoundCloud widget is 166px tall; YouTube iframe we keep at 68px (audio feel)
-    const iframeH = audioType === 'soundcloud' ? 166 : 68;
+    // SoundCloud widget is 166px tall; Spotify compact embed is 152px; YouTube iframe we keep at 68px (audio feel)
+    const iframeH = audioType === 'soundcloud' ? 166 : audioType === 'spotify' ? 152 : 68;
     const barH = iframeH + 20; // 10px padding top + bottom
 
     return (
