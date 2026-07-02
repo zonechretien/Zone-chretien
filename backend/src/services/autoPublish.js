@@ -50,16 +50,16 @@ Tu analyses les tendances et fournis des recommandations concrètes pour enrichi
 Réponds en français, de façon enthousiaste et pratique, en liste numérotée.`;
 
 const TOPICS = [
-  'Un artiste gospel haïtien influent : son parcours, son impact spirituel et ses chansons phares',
-  'Le verset biblique de la semaine : méditation profonde sur la louange et l\'adoration',
-  'Actualité internationale : les tendances du gospel contemporain et leur influence en Haïti',
-  'Un message d\'encouragement spirituel pour les chrétiens haïtiens face aux défis quotidiens',
-  'Histoire et héritage : les origines du gospel haïtien et son rayonnement mondial',
-  'Jeunesse et foi : comment le gospel contemporain touche la nouvelle génération chrétienne',
-  'Focus sur un groupe de louange haïtien : ministère, albums et vision spirituelle',
-  'La puissance de l\'adoration collective : témoignages et bienfaits du chant en communauté',
-  'Portrait d\'un artiste évangélique haïtien de la diaspora et son influence internationale',
-  'Analyse spirituelle d\'un hymne traditionnel haïtien chanté dans les églises du monde entier',
+  { sujet: 'Un artiste gospel haïtien influent : son parcours, son impact spirituel et ses chansons phares', photo: 'gospel,worship,singer,music' },
+  { sujet: 'Le verset biblique de la semaine : méditation profonde sur la louange et l\'adoration', photo: 'bible,prayer,church,faith' },
+  { sujet: 'Actualité internationale : les tendances du gospel contemporain et leur influence en Haïti', photo: 'concert,gospel,music,crowd' },
+  { sujet: 'Un message d\'encouragement spirituel pour les chrétiens haïtiens face aux défis quotidiens', photo: 'light,hope,faith,prayer' },
+  { sujet: 'Histoire et héritage : les origines du gospel haïtien et son rayonnement mondial', photo: 'choir,church,gospel,heritage' },
+  { sujet: 'Jeunesse et foi : comment le gospel contemporain touche la nouvelle génération chrétienne', photo: 'worship,youth,music,church' },
+  { sujet: 'Focus sur un groupe de louange haïtien : ministère, albums et vision spirituelle', photo: 'worship,gospel,band,music' },
+  { sujet: 'La puissance de l\'adoration collective : témoignages et bienfaits du chant en communauté', photo: 'worship,community,prayer,church' },
+  { sujet: 'Portrait d\'un artiste évangélique haïtien de la diaspora et son influence internationale', photo: 'gospel,singer,music,stage' },
+  { sujet: 'Analyse spirituelle d\'un hymne traditionnel haïtien chanté dans les églises du monde entier', photo: 'hymn,choir,church,music' },
 ];
 
 let topicIndex = 0;
@@ -78,7 +78,8 @@ export async function generatePublication({ force = false } = {}) {
   const topic = TOPICS[topicIndex % TOPICS.length];
   topicIndex++;
 
-  const raw = await generateText(SYS_PUBLICATION, `Rédige un article complet sur : ${topic}`, 4000);
+  const imageUrl = `https://source.unsplash.com/800x400/?${topic.photo}`;
+  const raw = await generateText(SYS_PUBLICATION, `Rédige un article complet sur : ${topic.sujet}`, 4000);
 
   const data = extractJSON(raw);
 
@@ -97,6 +98,7 @@ export async function generatePublication({ force = false } = {}) {
       slug,
       contenu: data.contenu,
       extrait: data.extrait || null,
+      imageUrl,
       status: 'PUBLIE',
       publishedAt: new Date(),
       auteurId: admin.id,
