@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { musiquesAPI } from '@/lib/api'
 import { TrendingUp, TrendingDown, Minus, Headphones, ArrowLeft, RefreshCw } from 'lucide-react'
+import { ImageWithFallback } from '@/components/public/ImageWithFallback'
 
 export const revalidate = 3600 // revalidate toutes les heures
 
@@ -105,9 +106,9 @@ export default async function Top50Page() {
                 {/* Cover */}
                 <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 relative">
                   {track.couvertureUrl ? (
-                    <img src={track.couvertureUrl} alt={track.titre}
+                    <ImageWithFallback src={track.couvertureUrl} alt={track.titre}
                       className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).src = '/images/default-cover.svg'; }} />
+                      fallbackSrc="/images/default-cover.svg" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center"
                       style={{ background: 'linear-gradient(135deg, #0f172a, #1e3a5f)' }}>
