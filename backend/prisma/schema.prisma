@@ -118,6 +118,7 @@ model Publication {
   categorieId     String?
   tags            Tag[]
   commentaires    Commentaire[]
+  mediaGalerie    MediaGalerie[]
   metaTitre       String?
   metaDescription String?
   motsCles        String?
@@ -299,12 +300,31 @@ model Evenement {
   publishedAt     DateTime?
   creePar         User        @relation(fields: [creeParId], references: [id])
   creeParId       String
+  mediaGalerie    MediaGalerie[]
   metaTitre       String?
   metaDescription String?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
   @@map("evenements")
+}
+
+// ── GALERIE (carousel articles / événements) ────────────────
+
+model MediaGalerie {
+  id            String       @id @default(cuid())
+  url           String
+  caption       String?
+  ordre         Int          @default(0)
+  publicationId String?
+  publication   Publication? @relation(fields: [publicationId], references: [id], onDelete: Cascade)
+  evenementId   String?
+  evenement     Evenement?   @relation(fields: [evenementId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+
+  @@index([publicationId])
+  @@index([evenementId])
+  @@map("media_galeries")
 }
 
 // ── GALERIE ──────────────────────────────────────────────────

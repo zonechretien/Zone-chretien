@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Search, Edit2, Trash2, Calendar, X, Save, Loader2, MapPin, Users } from 'lucide-react'
-import { evenementsAPI } from '@/lib/api'
+import { evenementsAPI, mediaGalerieAPI } from '@/lib/api'
+import { GaleriePhotosField, GaleriePhotoItem } from '@/components/admin/GaleriePhotosField'
 import toast from 'react-hot-toast'
 
 function Modal({ title, onClose, children }: any) {
@@ -42,11 +43,14 @@ function EvenementForm({ initial, onSave, onClose }: any) {
     entree: initial?.entree || 'Gratuit',
     status: initial?.status || 'PUBLIE',
   })
+  const [galeriePhotos, setGaleriePhotos] = useState<GaleriePhotoItem[]>(
+    (initial?.mediaGalerie || []).map((g: any) => ({ id: g.id, url: g.url, caption: g.caption }))
+  )
   const [saving, setSaving] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true)
-    try { await onSave(form) } finally { setSaving(false) }
+    try { await onSave({ ...form, galeriePhotos }) } finally { setSaving(false) }
   }
 
   return (
@@ -117,6 +121,9 @@ function EvenementForm({ initial, onSave, onClose }: any) {
           placeholder="https://..."
           className="w-full px-4 py-2.5 bg-navy-800 border border-navy-600 rounded-xl text-white focus:outline-none focus:border-gold-500 transition-colors" />
       </div>
+      <div className="border-t border-navy-700 pt-4">
+        <GaleriePhotosField items={galeriePhotos} onChange={setGaleriePhotos} />
+      </div>
       <div className="flex gap-3 pt-2">
         <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-navy-600 text-gray-300 hover:text-white rounded-xl transition-colors">Annuler</button>
         <button type="submit" disabled={saving}
@@ -144,12 +151,25 @@ export default function EvenementsPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (d: any) => evenementsAPI.create(d),
+    mutationFn: async (d: any) => {
+      const { galeriePhotos, ...rest } = d
+      const res = await evenementsAPI.create(rest)
+      const ev = res.data
+      if (galeriePhotos?.length) {
+        await mediaGalerieAPI.sync({ evenementId: ev.id, items: galeriePhotos })
+      }
+      return res
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-evenements'] }); toast.success('Événement créé !'); setModal(null) },
     onError: () => toast.error('Erreur lors de la création'),
   })
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: any) => evenementsAPI.update(id, data),
+    mutationFn: async ({ id, data }: any) => {
+      const { galeriePhotos, ...rest } = data
+      const res = await evenementsAPI.update(id, rest)
+      await mediaGalerieAPI.sync({ evenementId: id, items: galeriePhotos || [] })
+      return res
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin-evenements'] }); toast.success('Événement mis à jour !'); setModal(null) },
     onError: () => toast.error('Erreur lors de la mise à jour'),
   })

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { evenementsAPI } from '@/lib/api'
 import { Calendar, MapPin, Clock, Users, ArrowLeft, Ticket } from 'lucide-react'
 import { InscriptionButton } from './InscriptionButton'
+import { PhotoCarousel } from '@/components/public/PhotoCarousel'
 
 export const revalidate = 60
 
@@ -46,19 +47,21 @@ export default async function EvenementPage({ params }: { params: Promise<{ slug
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 
+  const hasGalerie = ev.mediaGalerie?.length > 0
+
   return (
     <main className="min-h-screen" style={{ background: '#060E1A' }}>
       {/* Hero image */}
-      {ev.imageUrl ? (
+      {!hasGalerie && (ev.imageUrl ? (
         <div className="relative h-72 md:h-96 overflow-hidden">
           <img src={ev.imageUrl} alt={ev.titre} className="w-full h-full object-cover" />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #060E1A 15%, rgba(6,14,26,0.5) 60%, transparent)' }} />
         </div>
       ) : (
         <div className="h-36 bg-gradient-to-br from-navy-900 to-navy-950" />
-      )}
+      ))}
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-20" style={{ marginTop: ev.imageUrl ? '-4rem' : '2rem' }}>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 pb-20" style={{ marginTop: hasGalerie ? '1.5rem' : ev.imageUrl ? '-4rem' : '2rem' }}>
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs mb-6" style={{ color: 'rgba(255,255,255,.35)' }}>
           <Link href="/" className="hover:text-white transition-colors" style={{ color: 'inherit', textDecoration: 'none' }}>Accueil</Link>
@@ -67,6 +70,13 @@ export default async function EvenementPage({ params }: { params: Promise<{ slug
           <span>/</span>
           <span className="truncate max-w-48" style={{ color: 'rgba(255,255,255,.2)' }}>{ev.titre}</span>
         </div>
+
+        {/* Galerie principale (carousel) */}
+        {hasGalerie && (
+          <div className="mb-8">
+            <PhotoCarousel photos={ev.mediaGalerie} variant="hero" aspectRatio="16/9" />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Colonne principale */}

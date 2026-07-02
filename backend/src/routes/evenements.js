@@ -25,6 +25,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
       prisma.evenement.findMany({
         where, skip, take: parseInt(limit),
         orderBy: { dateDebut: 'asc' },
+        include: { mediaGalerie: { orderBy: { ordre: 'asc' } } },
       }),
       prisma.evenement.count({ where }),
     ]);
@@ -34,7 +35,10 @@ router.get('/', optionalAuth, async (req, res, next) => {
 
 router.get('/:slug', async (req, res, next) => {
   try {
-    const ev = await prisma.evenement.findUnique({ where: { slug: req.params.slug } });
+    const ev = await prisma.evenement.findUnique({
+      where: { slug: req.params.slug },
+      include: { mediaGalerie: { orderBy: { ordre: 'asc' } } },
+    });
     if (!ev) return res.status(404).json({ error: 'Événement introuvable.' });
     res.json(ev);
   } catch (err) { next(err); }

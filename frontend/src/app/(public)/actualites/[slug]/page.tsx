@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { publicationsAPI } from '@/lib/api'
 import { Calendar, ArrowLeft, Eye } from 'lucide-react'
+import { PhotoCarousel } from '@/components/public/PhotoCarousel'
 
 export const revalidate = 60
 
@@ -73,6 +74,15 @@ export default async function ArticlePage({ params }: { params: Promise<{ slug: 
 
         <div style={{ color: 'rgba(255,255,255,0.8)', lineHeight: 1.8, fontSize: '1rem' }}
           dangerouslySetInnerHTML={{ __html: publication.contenu }} />
+
+        {publication.mediaGalerie?.length > 0 && (
+          <div style={{ marginTop: '3rem' }}>
+            <h2 style={{ fontFamily: 'Georgia, serif', fontSize: '1.3rem', fontWeight: 700, color: 'white', marginBottom: '1.25rem' }}>
+              📸 Photos
+            </h2>
+            <PhotoCarousel photos={publication.mediaGalerie} variant="default" />
+          </div>
+        )}
 
         <div style={{ marginTop: '3rem' }}>
           <Link href="/actualites" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', fontSize: '14px' }}>

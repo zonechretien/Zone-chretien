@@ -54,6 +54,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
           auteur: { select: { id: true, nom: true, prenom: true, avatar: true } },
           categorie: { select: { id: true, nom: true, slug: true, couleur: true } },
           tags: { select: { id: true, nom: true, slug: true } },
+          mediaGalerie: { orderBy: { ordre: 'asc' } },
           _count: { select: { commentaires: true } },
         },
       }),
@@ -83,6 +84,7 @@ router.get('/:slug', optionalAuth, async (req, res, next) => {
         auteur: { select: { id: true, nom: true, prenom: true, avatar: true } },
         categorie: true,
         tags: true,
+        mediaGalerie: { orderBy: { ordre: 'asc' } },
         commentaires: {
           where: { approuve: true, parentId: null },
           include: { enfants: { where: { approuve: true } } },

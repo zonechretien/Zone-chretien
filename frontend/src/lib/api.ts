@@ -125,6 +125,20 @@ export const galerieAPI = {
   deletePhoto: (photoId: string) => api.delete(`/galerie/photos/${photoId}`),
 };
 
+// Galerie photos (carousel) des articles et événements
+export const mediaGalerieAPI = {
+  uploadFiles: async (files: File[]) => {
+    const fd = new FormData();
+    files.forEach((f) => fd.append('files', f));
+    const res = await api.post('/media/upload-multiple', fd, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return (res.data?.files || []) as Array<{ url: string }>;
+  },
+  sync: (data: { publicationId?: string; evenementId?: string; items: Array<{ id?: string; url: string; caption?: string | null }> }) =>
+    api.put('/media-galerie/sync', data),
+};
+
 export const temoignagesAPI = {
   list: (params?: Record<string, unknown>) => api.get('/temoignages', { params }),
   getAll: (params?: Record<string, unknown>) => api.get('/temoignages/admin/tous', { params }),

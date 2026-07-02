@@ -3,7 +3,8 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Plus, Search, Edit2, Trash2, FileText, X, Save, Loader2, CheckCircle, Clock, Eye } from 'lucide-react'
-import { publicationsAPI } from '@/lib/api'
+import { publicationsAPI, mediaGalerieAPI } from '@/lib/api'
+import { GaleriePhotosField, GaleriePhotoItem } from '@/components/admin/GaleriePhotosField'
 import toast from 'react-hot-toast'
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -39,6 +40,9 @@ function ArticleForm({ initial, onSave, onClose }: { initial?: any; onSave: (d: 
     metaTitre:       initial?.metaTitre       || '',
     metaDescription: initial?.metaDescription || '',
   })
+  const [galeriePhotos, setGaleriePhotos] = useState<GaleriePhotoItem[]>(
+    (initial?.mediaGalerie || []).map((g: any) => ({ id: g.id, url: g.url, caption: g.caption }))
+  )
   const [saving, setSaving] = useState(false)
 
   const field = (label: string, key: keyof typeof form, type = 'text', required = false) => (
@@ -53,7 +57,7 @@ function ArticleForm({ initial, onSave, onClose }: { initial?: any; onSave: (d: 
   )
 
   return (
-    <form onSubmit={async e => { e.preventDefault(); setSaving(true); try { await onSave(form) } finally { setSaving(false) } }}
+    <form onSubmit={async e => { e.preventDefault(); setSaving(true); try { await onSave({ ...form, galeriePhotos }) } finally { setSaving(false) } }}
       style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
 
       {field('Titre', 'titre', 'text', true)}
@@ -84,6 +88,10 @@ function ArticleForm({ initial, onSave, onClose }: { initial?: any; onSave: (d: 
           </select>
         </div>
         {field('Image à la une (URL)', 'imageUrl')}
+      </div>
+
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
+        <GaleriePhotosField items={galeriePhotos} onChange={setGaleriePhotos} />
       </div>
 
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem' }}>
@@ -123,13 +131,26 @@ export default function ActualitesPage() {
   })
 
   const createMutation = useMutation({
-    mutationFn: (d: any) => publicationsAPI.create(d),
+    mutationFn: async (d: any) => {
+      const { galeriePhotos, ...rest } = d
+      const res = await publicationsAPI.create(rest)
+      const pub = res.data
+      if (galeriePhotos?.length) {
+        await mediaGalerieAPI.sync({ publicationId: pub.id, items: galeriePhotos })
+      }
+      return res
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['actualites'] }); toast.success('Article publié !'); setModal(null) },
     onError: (e: any) => toast.error(e?.response?.data?.message || 'Erreur lors de la création'),
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: any) => publicationsAPI.update(id, data),
+    mutationFn: async ({ id, data }: any) => {
+      const { galeriePhotos, ...rest } = data
+      const res = await publicationsAPI.update(id, rest)
+      await mediaGalerieAPI.sync({ publicationId: id, items: galeriePhotos || [] })
+      return res
+    },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['actualites'] }); toast.success('Article mis à jour !'); setModal(null) },
     onError: () => toast.error('Erreur lors de la mise à jour'),
   })

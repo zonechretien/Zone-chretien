@@ -83,6 +83,33 @@ function containsRealChristianName(text) {
   return KNOWN_CHRISTIAN_NAMES.some((name) => haystack.includes(name.toLowerCase()));
 }
 
+function findMatchedArtistName(text) {
+  const haystack = text.toLowerCase();
+  return KNOWN_CHRISTIAN_NAMES.find((name) => haystack.includes(name.toLowerCase())) || null;
+}
+
+// Ajoute 3 à 5 photos Picsum (seed liée à l'artiste) à la galerie d'un article sur un artiste
+async function addArtistPhotoGalerie(publicationId, artisteName) {
+  const seed = makeSlug(artisteName);
+  const count = 3 + Math.floor(Math.random() * 3); // 3 à 5
+  const captions = [
+    `${artisteName} en concert`,
+    `${artisteName} en studio`,
+    `${artisteName} lors d'un culte de louange`,
+    `${artisteName} avec son équipe de louange`,
+    `${artisteName} en interview`,
+  ];
+  await prisma.mediaGalerie.createMany({
+    data: Array.from({ length: count }, (_, i) => ({
+      url: `https://picsum.photos/seed/${seed}-${i + 1}/800/500`,
+      caption: captions[i % captions.length],
+      ordre: i,
+      publicationId,
+    })),
+  });
+  return count;
+}
+
 const CATEGORIE_LABELS = { ACTUALITE: 'Actualité', TEMOIGNAGE: 'Témoignage', MUSIQUE: 'Musique' };
 
 async function findOrCreateCategorie(value) {
@@ -243,6 +270,13 @@ export async function generatePublication({ force = false } = {}) {
       motsCles: 'gospel,zone-chretien,agent-ia',
     },
   });
+
+  // Article sur un artiste : ajoute automatiquement une galerie de photos Picsum
+  if (topic.seed === 'gospel-artist' || topic.seed === 'gospel-artist-intl') {
+    const artisteName = findMatchedArtistName(plainText) || data.titre;
+    const count = await addArtistPhotoGalerie(pub.id, artisteName);
+    logAction('publication', `${count} photos ajoutées à la galerie de "${pub.titre}"`);
+  }
 
   logAction('publication', `"${pub.titre}" publié (${pub.slug})`);
   return pub;
