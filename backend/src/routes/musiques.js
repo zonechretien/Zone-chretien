@@ -117,9 +117,20 @@ router.post('/', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.EDITEUR, ROLES
 router.put('/:id', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.EDITEUR), async (req, res, next) => {
   try {
     const { titre, artisteId, albumId, genre, fichierUrl, couvertureUrl, paroles, dateSortie, telechargeablePublic, status } = req.body;
+
+    let slug;
+    if (titre) {
+      const current = await prisma.musique.findUnique({ where: { id: req.params.id }, select: { titre: true, slug: true } });
+      if (current && current.titre !== titre) {
+        slug = makeSlug(titre);
+        const exists = await prisma.musique.findFirst({ where: { slug, NOT: { id: req.params.id } } });
+        if (exists) slug = `${slug}-${Date.now()}`;
+      }
+    }
+
     const musique = await prisma.musique.update({
       where: { id: req.params.id },
-      data: { titre, artisteId, albumId, genre, fichierUrl, couvertureUrl, paroles, dateSortie: dateSortie ? new Date(dateSortie) : undefined, telechargeablePublic, status, updatedAt: new Date() },
+      data: { titre, slug, artisteId, albumId, genre, fichierUrl, couvertureUrl, paroles, dateSortie: dateSortie ? new Date(dateSortie) : undefined, telechargeablePublic, status, updatedAt: new Date() },
       include: { artiste: { select: { id: true, nom: true } } },
     });
     io.emit('content:update', { type: 'musique', action: 'update', data: musique });
