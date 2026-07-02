@@ -41,6 +41,42 @@ router.get('/', optionalAuth, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /api/musiques/top50 — classement hebdomadaire par écoutes
+router.get('/top50', async (req, res, next) => {
+  try {
+    const musiques = await prisma.musique.findMany({
+      where: { status: 'PUBLIE' },
+      orderBy: { ecoutes: 'desc' },
+      take: 50,
+      include: { artiste: { select: { id: true, nom: true, slug: true, photoUrl: true } } },
+    });
+
+    // Snapshot de la semaine précédente (stocké en SiteSettings)
+    let prevMap = {};
+    try {
+      const snap = await prisma.siteSettings.findUnique({ where: { cle: 'top50_snapshot' } });
+      if (snap) {
+        const prev = JSON.parse(snap.valeur);
+        prev.forEach(item => { prevMap[item.id] = item.position; });
+      }
+    } catch {}
+
+    // Numéro de semaine ISO
+    const now = new Date();
+    const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+    const weekNumber = Math.ceil((dayOfYear + new Date(now.getFullYear(), 0, 1).getDay()) / 7);
+
+    const result = musiques.map((m, i) => {
+      const position = i + 1;
+      const prevPos = prevMap[m.id];
+      const variation = prevPos != null ? prevPos - position : null; // >0 monte, <0 descend
+      return { ...m, position, variation, isNew: prevPos == null };
+    });
+
+    res.json({ musiques: result, weekNumber, total: result.length, updatedAt: now });
+  } catch (err) { next(err); }
+});
+
 // GET /api/musiques/:slug
 router.get('/:slug', optionalAuth, async (req, res, next) => {
   try {

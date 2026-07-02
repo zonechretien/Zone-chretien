@@ -44,6 +44,10 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--gray); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--blue); }
 
+/* Utility: hide scrollbar (carousel, overflow-x-auto strips) */
+.scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
 /* ── Audio player bar ── */
 .audio-player-bar {
   position: fixed; bottom: 0; left: 0; right: 0;

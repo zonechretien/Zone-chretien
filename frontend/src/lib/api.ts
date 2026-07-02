@@ -67,6 +67,7 @@ export const publicationsAPI = {
 export const musiquesAPI = {
   list: (params?: Record<string, unknown>) => api.get('/musiques', { params }),
   get: (slug: string) => api.get(`/musiques/${slug}`),
+  top50: () => api.get('/musiques/top50'),
   create: (data: unknown) => api.post('/musiques', data),
   update: (id: string, data: unknown) => api.put(`/musiques/${id}`, data),
   delete: (id: string) => api.delete(`/musiques/${id}`),

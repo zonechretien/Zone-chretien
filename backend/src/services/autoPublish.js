@@ -196,6 +196,23 @@ export async function generateSuggestions({ force = false } = {}) {
 
 // ── Planificateur cron ────────────────────────────────────────
 
+// Sauvegarde le classement Top50 actuel comme référence de la semaine précédente
+async function saveTop50Snapshot() {
+  const musiques = await prisma.musique.findMany({
+    where: { status: 'PUBLIE' },
+    orderBy: { ecoutes: 'desc' },
+    take: 50,
+    select: { id: true, ecoutes: true },
+  });
+  const snapshot = musiques.map((m, i) => ({ id: m.id, position: i + 1, ecoutes: m.ecoutes }));
+  await prisma.siteSettings.upsert({
+    where: { cle: 'top50_snapshot' },
+    update: { valeur: JSON.stringify(snapshot) },
+    create: { cle: 'top50_snapshot', valeur: JSON.stringify(snapshot), description: 'Snapshot classement Top50 semaine précédente' },
+  });
+  logAction('suggestions', `Top50 snapshot sauvegardé (${snapshot.length} chansons)`);
+}
+
 export function startScheduler() {
   // 3 publications/jour : 7h, 12h30, 19h
   cron.schedule('0 7 * * *', async () => {
@@ -225,5 +242,11 @@ export function startScheduler() {
     catch (err) { logAction('suggestions', `Cron jeudi — ${err.message}`, false); }
   });
 
-  logger.info('🤖 Agent IA Zone-Chrétien — Planificateur démarré (3 pub/j · 1 event/sem · 1 sugg/sem)');
+  // Snapshot Top50 : chaque lundi à 6h (avant les publications de 7h)
+  cron.schedule('0 6 * * 1', async () => {
+    try { await saveTop50Snapshot(); }
+    catch (err) { logAction('suggestions', `Top50 snapshot — ${err.message}`, false); }
+  });
+
+  logger.info('🤖 Agent IA Zone-Chrétien — Planificateur démarré (3 pub/j · 1 event/sem · 1 sugg/sem · snapshot Top50/lun)');
 }
