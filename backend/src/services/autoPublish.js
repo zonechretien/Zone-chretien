@@ -7,34 +7,43 @@ import { logger } from '../utils/logger.js';
 
 const makeSlug = (s) => slugify(s, { lower: true, strict: true, locale: 'fr' });
 
+// Extrait robustement un objet JSON depuis une réponse Claude (gère les blocs markdown)
+function extractJSON(text) {
+  const attempts = [
+    // 1. Parse direct
+    () => JSON.parse(text.trim()),
+    // 2. Après suppression des blocs markdown ```json ... ```
+    () => {
+      const clean = text.replace(/^[\s\S]*?```(?:json)?\s*/i, '').replace(/\s*```[\s\S]*$/i, '').trim();
+      return JSON.parse(clean);
+    },
+    // 3. Extraction par regex du premier objet JSON complet
+    () => {
+      const m = text.match(/\{[\s\S]*\}/);
+      if (!m) throw new Error('Aucun objet JSON trouvé');
+      return JSON.parse(m[0]);
+    },
+  ];
+  for (const attempt of attempts) {
+    try { return attempt(); } catch { /* essai suivant */ }
+  }
+  throw new Error(`JSON introuvable dans la réponse Claude : ${text.slice(0, 120)}`);
+}
+
 // ── Prompts système ───────────────────────────────────────────
 
 const SYS_PUBLICATION = `Tu es le rédacteur en chef de Zone-Chrétien, la plateforme de référence du gospel haïtien.
 Tu rédiges des articles engageants, spirituellement riches, en français.
-IMPORTANT : Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans bloc markdown.
-Format exact :
-{
-  "titre": "Titre accrocheur",
-  "sousTitre": "Sous-titre complémentaire",
-  "extrait": "Résumé en 2-3 phrases percutantes.",
-  "contenu": "<p>Contenu HTML avec h2, h3, blockquote, strong. Minimum 400 mots.</p>"
-}`;
+RÈGLE ABSOLUE : Ta réponse doit commencer DIRECTEMENT par { et se terminer par }. Zéro texte avant ou après. Zéro bloc markdown. Zéro commentaire.
+Format JSON :
+{"titre":"...","sousTitre":"...","extrait":"...","contenu":"<p>HTML 400+ mots</p>"}`;
 
 const SYS_EVENEMENT = `Tu es responsable des événements de Zone-Chrétien.
 Tu génères des événements chrétiens/gospel réalistes à venir en Haïti ou pour la diaspora.
-IMPORTANT : Réponds UNIQUEMENT avec un objet JSON valide, sans texte avant ni après.
-Format exact :
-{
-  "titre": "Titre de l'événement",
-  "description": "<p>Description HTML en 2-3 paragraphes.</p>",
-  "type": "CONCERT",
-  "lieu": "Nom du lieu",
-  "adresse": "Adresse, ville",
-  "heure": "19:00",
-  "entree": "Gratuit",
-  "daysFromNow": 21
-}
-Types valides uniquement : CONCERT, CROISADE, CONFERENCE, EVANGELISATION`;
+RÈGLE ABSOLUE : Ta réponse doit commencer DIRECTEMENT par { et se terminer par }. Zéro texte avant ou après. Zéro bloc markdown.
+Format JSON :
+{"titre":"...","description":"<p>HTML</p>","type":"CONCERT","lieu":"...","adresse":"...","heure":"19:00","entree":"Gratuit","daysFromNow":21}
+Types valides : CONCERT, CROISADE, CONFERENCE, EVANGELISATION`;
 
 const SYS_SUGGESTIONS = `Tu es un expert passionné de musique chrétienne haïtienne et internationale.
 Tu analyses les tendances et fournis des recommandations concrètes pour enrichir une plateforme gospel.
@@ -69,15 +78,9 @@ export async function generatePublication({ force = false } = {}) {
   const topic = TOPICS[topicIndex % TOPICS.length];
   topicIndex++;
 
-  const raw = await generateText(SYS_PUBLICATION, `Rédige un article complet sur : ${topic}`);
+  const raw = await generateText(SYS_PUBLICATION, `Rédige un article complet sur : ${topic}`, 4000);
 
-  let data;
-  try {
-    const match = raw.match(/\{[\s\S]*\}/);
-    data = JSON.parse(match ? match[0] : raw);
-  } catch {
-    throw new Error(`Réponse JSON invalide de Claude : ${raw.slice(0, 150)}`);
-  }
+  const data = extractJSON(raw);
 
   if (!data.titre || !data.contenu) {
     throw new Error('Réponse Claude incomplète — champs titre ou contenu manquants');
@@ -123,13 +126,7 @@ export async function generateEvenement({ force = false } = {}) {
     'Génère un événement chrétien/gospel à venir en Haïti ou pour la diaspora haïtienne'
   );
 
-  let data;
-  try {
-    const match = raw.match(/\{[\s\S]*\}/);
-    data = JSON.parse(match ? match[0] : raw);
-  } catch {
-    throw new Error(`JSON invalide : ${raw.slice(0, 150)}`);
-  }
+  const data = extractJSON(raw);
 
   const validTypes = ['CONCERT', 'CROISADE', 'CONFERENCE', 'EVANGELISATION'];
   const type = validTypes.includes(data.type) ? data.type : 'CONCERT';
