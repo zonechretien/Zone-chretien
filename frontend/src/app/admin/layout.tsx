@@ -138,7 +138,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto" style={{ background: 'var(--off-white)' }}>
+        <main className="flex-1 overflow-y-auto" style={{ background: '#060E1A' }}>
           {children}
         </main>
       </div>
