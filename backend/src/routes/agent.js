@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { authenticate, authorize, ROLES } from '../middleware/auth.js';
 import { isAgentEnabled, setAgentEnabled, getAgentStats } from '../services/aiAgent.js';
-import { generatePublication, generateEvenement, generateSuggestions } from '../services/autoPublish.js';
+import { generatePublication, generateEvenement, generateSuggestions, generateVideo, generateMusiqueSuggestion } from '../services/autoPublish.js';
 
 const router = Router();
 
@@ -14,7 +14,7 @@ router.get('/status', async (req, res, next) => {
   try {
     const [enabled, stats] = await Promise.all([
       isAgentEnabled(),
-      Promise.resolve(getAgentStats()),
+      getAgentStats(),
     ]);
     res.json({ enabled, ...stats });
   } catch (err) { next(err); }
@@ -66,6 +66,25 @@ router.post('/trigger/suggestions', async (req, res, next) => {
     }
     const suggestions = await generateSuggestions({ force: true });
     res.json({ success: true, suggestions });
+  } catch (err) { next(err); }
+});
+
+// POST /api/agent/trigger/video — Publie une vidéo (YouTube Data API ou bibliothèque, pas besoin de Claude)
+router.post('/trigger/video', async (req, res, next) => {
+  try {
+    const video = await generateVideo({ force: true });
+    res.json({ success: true, video });
+  } catch (err) { next(err); }
+});
+
+// POST /api/agent/trigger/musique — Suggère une musique en BROUILLON pour validation admin
+router.post('/trigger/musique', async (req, res, next) => {
+  try {
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(400).json({ error: 'ANTHROPIC_API_KEY non configurée dans backend/.env' });
+    }
+    const musique = await generateMusiqueSuggestion({ force: true });
+    res.json({ success: true, musique });
   } catch (err) { next(err); }
 });
 

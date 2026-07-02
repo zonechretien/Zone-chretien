@@ -196,4 +196,6 @@ export const agentAPI = {
   triggerPublication: () => api.post('/agent/trigger/publication'),
   triggerEvenement: () => api.post('/agent/trigger/evenement'),
   triggerSuggestions: () => api.post('/agent/trigger/suggestions'),
+  triggerVideo: () => api.post('/agent/trigger/video'),
+  triggerMusique: () => api.post('/agent/trigger/musique'),
 };

@@ -49,6 +49,85 @@ const SYS_SUGGESTIONS = `Tu es un expert passionné de musique chrétienne haït
 Tu analyses les tendances et fournis des recommandations concrètes pour enrichir une plateforme gospel.
 Réponds en français, de façon enthousiaste et pratique, en liste numérotée.`;
 
+const SYS_MUSIQUE = `Tu es un dénicheur de talents (A&R) pour Zone-Chrétien, spécialisé en gospel haïtien et international.
+Propose UNE chanson gospel plausible à suggérer à l'équipe éditoriale (titre + nom d'artiste réalistes).
+RÈGLE ABSOLUE : Ta réponse doit commencer DIRECTEMENT par { et se terminer par }. Zéro texte avant ou après. Zéro bloc markdown.
+Format JSON :
+{"titre":"...","artiste":"...","genre":"GOSPEL_HAITIEN","dureeSecondes":230}
+Genre valide : "GOSPEL_HAITIEN" pour un artiste haïtien, "GOSPEL_CONTEMPORAIN" pour un artiste international.`;
+
+// ── Bibliothèque de vidéos gospel (fallback si YOUTUBE_API_KEY absente) ─
+// IDs vérifiés — vraies vidéos officielles/publiques YouTube d'artistes gospel
+// haïtiens et internationaux, à rotater.
+const VIDEO_LIBRARY = [
+  { titre: "Stanley Georges — Glwa Ou (Clip officiel)", artiste: 'Stanley Georges', embedId: 'X0n2M-tkpg4', categorie: 'Gospel Haïtien' },
+  { titre: "Stanley Georges — Sou Jenou'm (Clip officiel)", artiste: 'Stanley Georges', embedId: 'OSfeldU7nqc', categorie: 'Gospel Haïtien' },
+  { titre: 'Delly Benson — Sentespri (Vidéo officielle)', artiste: 'Delly Benson', embedId: 'yPxk7RTG3Ic', categorie: 'Gospel Haïtien' },
+  { titre: 'Delly Benson — Mwen Sou Kont Anwo (Official Video)', artiste: 'Delly Benson', embedId: 'GCRY-en2sz0', categorie: 'Gospel Haïtien' },
+  { titre: 'Delly Benson feat. Cassandra Guillaume — BonDye Ou Fidèl', artiste: 'Delly Benson', embedId: 'aqVLLuxsWQw', categorie: 'Gospel Haïtien' },
+  { titre: 'Joël Lorquet — Gras pou Timoun Yo', artiste: 'Joël Lorquet', embedId: 'FcruvrBTMYY', categorie: 'Gospel Haïtien' },
+  { titre: 'Joël Lorquet — Pitye Pou Ayiti', artiste: 'Joël Lorquet', embedId: 'R_-qQ4M1kWM', categorie: 'Gospel Haïtien' },
+  { titre: 'Michael W. Smith — Revelation Song (Official Lyric Video)', artiste: 'Michael W. Smith', embedId: 'i8xFgPJWDOo', categorie: 'Gospel International' },
+  { titre: 'Hillsong Worship — What A Beautiful Name', artiste: 'Hillsong Worship', embedId: 'nQWFzMvCfLE', categorie: 'Gospel International' },
+  { titre: 'Hillsong Worship — King of Kings (Live)', artiste: 'Hillsong Worship', embedId: 'dQl4izxPeNU', categorie: 'Gospel International' },
+  { titre: 'Hillsong Worship — Who You Say I Am', artiste: 'Hillsong Worship', embedId: 'lKw6uqtGFfo', categorie: 'Gospel International' },
+];
+
+// Genre par défaut de l'artiste selon son origine (GOSPEL_INTERNATIONAL n'existe pas dans l'enum Prisma)
+const ARTISTE_GENRE = {
+  'Stanley Georges': 'GOSPEL_HAITIEN',
+  'Delly Benson': 'GOSPEL_HAITIEN',
+  'Joël Lorquet': 'GOSPEL_HAITIEN',
+  'Michael W. Smith': 'GOSPEL_CONTEMPORAIN',
+  'Hillsong Worship': 'GOSPEL_CONTEMPORAIN',
+};
+
+// Pistes audio placeholder (même service déjà utilisé par prisma/seed_musiques.js)
+// — à remplacer par l'admin par le vrai fichier/embed SoundCloud lors de la validation.
+const SOUNDHELIX_TRACKS = Array.from({ length: 9 }, (_, i) => `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${i + 1}.mp3`);
+
+let videoIndex = 0;
+let audioIndex = 0;
+
+// Trouve ou crée l'artiste par son nom (utilisé par vidéos et suggestions musicales)
+async function findOrCreateArtiste(nom, genre = 'GOSPEL_CONTEMPORAIN') {
+  const slug = makeSlug(nom);
+  let artiste = await prisma.artiste.findUnique({ where: { slug } });
+  if (!artiste) {
+    artiste = await prisma.artiste.create({ data: { nom, slug, genre, actif: true } });
+  }
+  return artiste;
+}
+
+// Recherche une vidéo gospel via YouTube Data API v3 (si YOUTUBE_API_KEY configurée)
+async function searchYouTubeGospelVideo() {
+  if (!process.env.YOUTUBE_API_KEY) return null;
+  try {
+    const queries = [
+      'gospel haïtien clip officiel',
+      'musique évangélique haïtienne',
+      'gospel worship official video',
+      'louange adoration official music video',
+    ];
+    const q = queries[Math.floor(Math.random() * queries.length)];
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&maxResults=10&q=${encodeURIComponent(q)}&key=${process.env.YOUTUBE_API_KEY}`;
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const items = (data.items || []).filter((it) => it.id?.videoId);
+    if (!items.length) return null;
+    const pick = items[Math.floor(Math.random() * items.length)];
+    return {
+      titre: pick.snippet.title,
+      artiste: pick.snippet.channelTitle,
+      embedId: pick.id.videoId,
+      categorie: 'Gospel',
+    };
+  } catch {
+    return null;
+  }
+}
+
 // Seeds Picsum stables (toujours la même image pour le même seed)
 const TOPICS = [
   { sujet: 'Un artiste gospel haïtien influent : son parcours, son impact spirituel et ses chansons phares', seed: 'gospel-artist' },
@@ -194,6 +273,106 @@ export async function generateSuggestions({ force = false } = {}) {
   return suggestions;
 }
 
+// ── Génération d'une vidéo (YouTube Data API v3, sinon bibliothèque) ──
+
+export async function generateVideo({ force = false } = {}) {
+  if (!force) {
+    const enabled = await isAgentEnabled();
+    if (!enabled) return null;
+  }
+
+  const admin = await getAdminUser();
+  if (!admin) throw new Error('Aucun administrateur actif trouvé');
+
+  let candidate = await searchYouTubeGospelVideo();
+  if (!candidate) {
+    candidate = VIDEO_LIBRARY[videoIndex % VIDEO_LIBRARY.length];
+    videoIndex++;
+  }
+
+  // Évite de republier une vidéo déjà présente
+  const already = await prisma.video.findFirst({ where: { embedId: candidate.embedId } });
+  if (already) {
+    logAction('video', `Vidéo déjà publiée, ignorée ("${candidate.titre}")`);
+    return already;
+  }
+
+  const genre = ARTISTE_GENRE[candidate.artiste] || 'GOSPEL_CONTEMPORAIN';
+  const artiste = await findOrCreateArtiste(candidate.artiste, genre);
+
+  let slug = makeSlug(candidate.titre);
+  const exists = await prisma.video.findUnique({ where: { slug } });
+  if (exists) slug = `${slug}-${Date.now()}`;
+
+  const video = await prisma.video.create({
+    data: {
+      titre: candidate.titre,
+      slug,
+      description: candidate.categorie ? `${candidate.categorie} — sélection Zone-Chrétien` : null,
+      platform: 'YOUTUBE',
+      url: `https://www.youtube.com/watch?v=${candidate.embedId}`,
+      embedId: candidate.embedId,
+      miniatureUrl: `https://img.youtube.com/vi/${candidate.embedId}/hqdefault.jpg`,
+      artisteId: artiste.id,
+      categorie: candidate.categorie || null,
+      status: 'PUBLIE',
+      publishedAt: new Date(),
+      ajouteParId: admin.id,
+    },
+  });
+
+  logAction('video', `"${video.titre}" publiée (YouTube)`);
+  return video;
+}
+
+// ── Suggestion d'une nouvelle musique (créée en BROUILLON) ────
+
+export async function generateMusiqueSuggestion({ force = false } = {}) {
+  if (!force) {
+    const enabled = await isAgentEnabled();
+    if (!enabled) return null;
+  }
+
+  const admin = await getAdminUser();
+  if (!admin) throw new Error('Aucun administrateur actif trouvé');
+
+  const raw = await generateText(SYS_MUSIQUE, 'Suggère une nouvelle chanson gospel à ajouter sur Zone-Chrétien.', 400);
+  const data = extractJSON(raw);
+
+  if (!data.titre || !data.artiste) {
+    throw new Error('Réponse Claude incomplète — champs titre ou artiste manquants');
+  }
+
+  const genre = data.genre === 'GOSPEL_HAITIEN' ? 'GOSPEL_HAITIEN' : 'GOSPEL_CONTEMPORAIN';
+  const artiste = await findOrCreateArtiste(data.artiste, genre);
+
+  let slug = makeSlug(data.titre);
+  const exists = await prisma.musique.findUnique({ where: { slug } });
+  if (exists) slug = `${slug}-${Date.now()}`;
+
+  const fichierUrl = SOUNDHELIX_TRACKS[audioIndex % SOUNDHELIX_TRACKS.length];
+  audioIndex++;
+  const couvertureUrl = `https://picsum.photos/seed/musique-${Date.now()}/400/400`;
+
+  const musique = await prisma.musique.create({
+    data: {
+      titre: data.titre,
+      slug,
+      fichierUrl,
+      couvertureUrl,
+      duree: parseInt(data.dureeSecondes) || 210,
+      genre,
+      status: 'BROUILLON',
+      telechargeablePublic: true,
+      artisteId: artiste.id,
+      ajouteParId: admin.id,
+    },
+  });
+
+  logAction('musique', `"${musique.titre}" suggérée par ${artiste.nom} (brouillon à valider)`);
+  return musique;
+}
+
 // ── Planificateur cron ────────────────────────────────────────
 
 // Sauvegarde le classement Top50 actuel comme référence de la semaine précédente
@@ -242,11 +421,28 @@ export function startScheduler() {
     catch (err) { logAction('suggestions', `Cron jeudi — ${err.message}`, false); }
   });
 
+  // Vidéos : 2 par jour — 10h et 16h
+  cron.schedule('0 10 * * *', async () => {
+    try { await generateVideo(); }
+    catch (err) { logAction('video', `Cron 10h — ${err.message}`, false); }
+  });
+
+  cron.schedule('0 16 * * *', async () => {
+    try { await generateVideo(); }
+    catch (err) { logAction('video', `Cron 16h — ${err.message}`, false); }
+  });
+
+  // Suggestion musicale (brouillon à valider) : chaque jour à 9h
+  cron.schedule('0 9 * * *', async () => {
+    try { await generateMusiqueSuggestion(); }
+    catch (err) { logAction('musique', `Cron 9h — ${err.message}`, false); }
+  });
+
   // Snapshot Top50 : chaque lundi à 6h (avant les publications de 7h)
   cron.schedule('0 6 * * 1', async () => {
     try { await saveTop50Snapshot(); }
     catch (err) { logAction('suggestions', `Top50 snapshot — ${err.message}`, false); }
   });
 
-  logger.info('🤖 Agent IA Zone-Chrétien — Planificateur démarré (3 pub/j · 1 event/sem · 1 sugg/sem · snapshot Top50/lun)');
+  logger.info('🤖 Agent IA Zone-Chrétien — Planificateur démarré (3 pub/j · 2 vidéos/j · 1 sugg. musique/j · 1 event/sem · 1 sugg. tendances/sem · snapshot Top50/lun)');
 }

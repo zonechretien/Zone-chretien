@@ -60,14 +60,25 @@ export async function generateText(systemPrompt, userPrompt, maxTokens = 1500) {
   return msg.content[0].text;
 }
 
-export function getAgentStats() {
-  const today = new Date().toISOString().slice(0, 10);
-  const todayLogs = agentLog.filter((l) => l.at.startsWith(today));
+// Compteurs basés sur la base de données (persistent au redémarrage,
+// contrairement à agentLog qui est un ring buffer en mémoire).
+export async function getAgentStats() {
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const [todayPublications, todayEvenements, todayVideos, todayMusiques] = await Promise.all([
+    prisma.publication.count({ where: { createdAt: { gte: startOfDay } } }),
+    prisma.evenement.count({ where: { createdAt: { gte: startOfDay } } }),
+    prisma.video.count({ where: { createdAt: { gte: startOfDay } } }),
+    prisma.musique.count({ where: { createdAt: { gte: startOfDay } } }),
+  ]);
+
   return {
     totalLogs: agentLog.length,
-    todayPublications: todayLogs.filter((l) => l.type === 'publication' && l.success).length,
-    todayEvenements: todayLogs.filter((l) => l.type === 'evenement' && l.success).length,
-    todayReplies: todayLogs.filter((l) => l.type === 'reponse' && l.success).length,
+    todayPublications,
+    todayEvenements,
+    todayVideos,
+    todayMusiques,
     recentLogs: agentLog.slice(0, 30),
     apiConfigured: !!process.env.ANTHROPIC_API_KEY,
   };

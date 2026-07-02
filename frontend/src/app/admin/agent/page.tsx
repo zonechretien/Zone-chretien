@@ -10,6 +10,8 @@ const TYPE_LABELS: Record<string, { icon: string; label: string; color: string }
   publication: { icon: '📰', label: 'Publication', color: '#1E5FA8' },
   evenement:   { icon: '🎉', label: 'Événement',   color: '#7c3aed' },
   suggestions: { icon: '🎵', label: 'Suggestion',  color: '#E8A020' },
+  video:       { icon: '🎬', label: 'Vidéo',        color: '#ef4444' },
+  musique:     { icon: '🎧', label: 'Musique',      color: '#16a34a' },
   reponse:     { icon: '✉️', label: 'Email',        color: '#16a34a' },
 };
 
@@ -27,6 +29,7 @@ export default function AgentPage() {
   const queryClient = useQueryClient();
   const [suggestions, setSuggestions] = useState<string | null>(null);
   const [loadingTrigger, setLoadingTrigger] = useState<string | null>(null);
+  const [showGenMenu, setShowGenMenu] = useState(false);
 
   const { data, isLoading } = useQuery({
     queryKey: ['agent-status'],
@@ -43,8 +46,9 @@ export default function AgentPage() {
     onError: () => toast.error('Erreur lors du changement d\'état.'),
   });
 
-  async function trigger(action: 'publication' | 'evenement' | 'suggestions') {
+  async function trigger(action: 'publication' | 'evenement' | 'suggestions' | 'video' | 'musique') {
     setLoadingTrigger(action);
+    setShowGenMenu(false);
     try {
       if (action === 'publication') {
         await agentAPI.triggerPublication();
@@ -53,6 +57,14 @@ export default function AgentPage() {
       } else if (action === 'evenement') {
         await agentAPI.triggerEvenement();
         toast.success('🎉 Événement créé et publié !');
+        queryClient.invalidateQueries({ queryKey: ['agent-status'] });
+      } else if (action === 'video') {
+        await agentAPI.triggerVideo();
+        toast.success('🎬 Vidéo publiée !');
+        queryClient.invalidateQueries({ queryKey: ['agent-status'] });
+      } else if (action === 'musique') {
+        await agentAPI.triggerMusique();
+        toast.success('🎧 Musique suggérée en brouillon — à valider dans Musiques.');
         queryClient.invalidateQueries({ queryKey: ['agent-status'] });
       } else {
         const res = await agentAPI.triggerSuggestions();
@@ -118,10 +130,11 @@ export default function AgentPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
         <StatCard icon="📰" value={data?.todayPublications ?? 0} label="Publications aujourd'hui" color="#1E5FA8" />
+        <StatCard icon="🎬" value={data?.todayVideos ?? 0} label="Vidéos aujourd'hui" color="#ef4444" />
+        <StatCard icon="🎧" value={data?.todayMusiques ?? 0} label="Musiques suggérées" color="#16a34a" />
         <StatCard icon="🎉" value={data?.todayEvenements ?? 0} label="Événements créés" color="#7c3aed" />
-        <StatCard icon="✉️" value={data?.todayReplies ?? 0} label="Réponses envoyées" color="#16a34a" />
         <StatCard icon="📋" value={data?.totalLogs ?? 0} label="Total actions" color="#E8A020" />
       </div>
 
@@ -131,6 +144,8 @@ export default function AgentPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {[
             { icon: '📰', label: 'Publications', schedule: '7h · 12h30 · 19h', freq: '3 par jour', color: '#1E5FA8' },
+            { icon: '🎬', label: 'Vidéos',        schedule: '10h · 16h',       freq: '2 par jour', color: '#ef4444' },
+            { icon: '🎧', label: 'Musiques',      schedule: 'Chaque jour 9h',  freq: '1 brouillon/jour', color: '#16a34a' },
             { icon: '🎉', label: 'Événements',   schedule: 'Chaque lundi 8h',  freq: '1 par semaine', color: '#7c3aed' },
             { icon: '🎵', label: 'Suggestions',  schedule: 'Chaque jeudi 10h', freq: '1 par semaine', color: '#E8A020' },
           ].map((item) => (
@@ -150,8 +165,40 @@ export default function AgentPage() {
       <div className="rounded-xl p-5 mb-5" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.08)' }}>
         <h2 className="text-sm font-bold text-white mb-3">⚡ Déclenchement manuel</h2>
         <div className="flex flex-wrap gap-3">
+          {/* Générer une publication — choix du type : Article / Vidéo / Musique */}
+          <div className="relative">
+            <button
+              onClick={() => setShowGenMenu((v) => !v)}
+              disabled={!!loadingTrigger}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-40"
+              style={{ background: '#1E5FA822', color: '#1E5FA8', border: '1px solid #1E5FA844' }}>
+              {['publication', 'video', 'musique'].includes(loadingTrigger || '') ? (
+                <span className="animate-spin">⟳</span>
+              ) : '✨'}
+              {['publication', 'video', 'musique'].includes(loadingTrigger || '') ? 'Génération…' : 'Générer une publication'} ▾
+            </button>
+            {showGenMenu && (
+              <div className="absolute z-10 mt-2 w-56 rounded-xl overflow-hidden shadow-xl"
+                style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,.12)' }}>
+                {([
+                  { action: 'publication' as const, icon: '📰', label: 'Article',  needsApi: true },
+                  { action: 'video'       as const, icon: '🎬', label: 'Vidéo',    needsApi: false },
+                  { action: 'musique'     as const, icon: '🎧', label: 'Musique',  needsApi: true },
+                ]).map(({ action, icon, label, needsApi }) => (
+                  <button
+                    key={action}
+                    onClick={() => trigger(action)}
+                    disabled={!!loadingTrigger || (needsApi && !apiOk)}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-left transition-colors disabled:opacity-40 hover:bg-white/5"
+                    style={{ color: 'white' }}>
+                    {icon} {label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {([
-            { action: 'publication' as const, icon: '📰', label: 'Générer une publication', color: '#1E5FA8' },
             { action: 'evenement'   as const, icon: '🎉', label: 'Créer un événement',       color: '#7c3aed' },
             { action: 'suggestions' as const, icon: '🎵', label: 'Analyser les tendances',   color: '#E8A020' },
           ]).map(({ action, icon, label, color }) => (
