@@ -116,18 +116,21 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="bg-white flex items-center px-6 h-14 flex-shrink-0" style={{ border: 'none', borderBottom: '1.5px solid var(--gray-light)', boxShadow: 'var(--shadow-sm)' }}>
-          <div className="font-display text-base font-bold" style={{ color: 'var(--navy)' }}>
-            Glory<span style={{ color: 'var(--gold)' }}>Sound</span>
-            <span className="text-xs font-normal ml-2" style={{ color: 'var(--gray)', fontFamily: 'var(--font-dm-sans)' }}>— Panneau Admin</span>
+        <header className="flex items-center px-6 h-14 flex-shrink-0"
+          style={{ background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,.07)' }}>
+          <div className="font-display text-base font-bold text-white">
+            Zone-<span style={{ color: 'var(--gold)' }}>Chrétien</span>
+            <span className="text-xs font-normal ml-2" style={{ color: 'rgba(255,255,255,.35)', fontFamily: 'var(--font-dm-sans)' }}>— Panneau Admin</span>
           </div>
           <div className="flex items-center gap-3 ml-auto">
-            <Link href="/" target="_blank" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border no-underline text-xs font-semibold transition-all hover:border-blue-400"
-              style={{ borderColor: 'var(--gray-light)', color: 'var(--gray-dark)' }}>
+            <Link href="/" target="_blank" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg no-underline text-xs font-semibold transition-all"
+              style={{ background: 'rgba(255,255,255,.07)', color: 'rgba(255,255,255,.6)', border: '1px solid rgba(255,255,255,.1)' }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,.12)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,.07)')}>
               👁 Voir le site
             </Link>
-            <div className="w-8 h-8 rounded-lg border flex items-center justify-center cursor-pointer relative transition-all hover:border-blue-400"
-              style={{ borderColor: 'var(--gray-light)', color: 'var(--gray-dark)' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer relative transition-all"
+              style={{ background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)', color: 'rgba(255,255,255,.7)' }}>
               🔔
               <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full" style={{ background: 'var(--red)' }}></span>
             </div>
