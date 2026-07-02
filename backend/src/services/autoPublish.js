@@ -5,6 +5,7 @@ import { generateText, generateTextWithSearch, isAgentEnabled, getAdminUser, log
 import { discoverMusicSpotify, discoverVideosYoutube, discoverActualitesRSS } from './discovery.js';
 import { prisma } from '../config/database.js';
 import { logger } from '../utils/logger.js';
+import { detectLangue } from '../utils/langue.js';
 
 const makeSlug = (s) => slugify(s, { lower: true, strict: true, locale: 'fr' });
 
@@ -352,6 +353,7 @@ export async function generateVideo({ force = false } = {}) {
 
   const genre = ARTISTE_GENRE[candidate.artiste] || 'GOSPEL_CONTEMPORAIN';
   const artiste = await findOrCreateArtiste(candidate.artiste, genre);
+  const langue = detectLangue({ titre: candidate.titre, artiste: candidate.artiste });
 
   let slug = makeSlug(candidate.titre);
   const exists = await prisma.video.findUnique({ where: { slug } });
@@ -368,6 +370,7 @@ export async function generateVideo({ force = false } = {}) {
       miniatureUrl: `https://img.youtube.com/vi/${candidate.embedId}/hqdefault.jpg`,
       artisteId: artiste.id,
       categorie: candidate.categorie || null,
+      langue,
       status: 'PUBLIE',
       publishedAt: new Date(),
       ajouteParId: admin.id,
@@ -398,6 +401,8 @@ export async function generateMusiqueSuggestion({ force = false } = {}) {
 
   const genre = data.genre === 'GOSPEL_HAITIEN' ? 'GOSPEL_HAITIEN' : 'GOSPEL_CONTEMPORAIN';
   const artiste = await findOrCreateArtiste(data.artiste, genre);
+  const detected = detectLangue({ titre: data.titre, artiste: data.artiste });
+  const langue = genre === 'GOSPEL_HAITIEN' ? 'CREOLE' : (detected === 'AUTRE' ? 'ANGLAIS' : detected);
 
   let slug = makeSlug(data.titre);
   const exists = await prisma.musique.findUnique({ where: { slug } });
@@ -415,6 +420,7 @@ export async function generateMusiqueSuggestion({ force = false } = {}) {
       couvertureUrl,
       duree: parseInt(data.dureeSecondes) || 210,
       genre,
+      langue,
       status: 'BROUILLON',
       telechargeablePublic: true,
       artisteId: artiste.id,

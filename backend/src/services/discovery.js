@@ -6,6 +6,7 @@ import { io } from '../server.js';
 import { searchYoutubeAllCategories } from './sources/youtube.js';
 import { searchSpotifyAllCategories } from './sources/spotify.js';
 import { fetchGospelNews } from './sources/rss.js';
+import { CATEGORIE_LANGUE_MAP } from '../utils/langue.js';
 
 const makeSlug = (s) => slugify(s, { lower: true, strict: true, locale: 'fr' });
 
@@ -73,6 +74,7 @@ export async function approveSourceContent(id, adminId) {
 
   const meta = item.metadata ? JSON.parse(item.metadata) : {};
   const genre = CATEGORIE_GENRE_MAP[item.categorie] || 'GOSPEL_CONTEMPORAIN';
+  const langue = CATEGORIE_LANGUE_MAP[item.categorie] || 'AUTRE';
   let publishedType;
   let publishedId;
 
@@ -87,6 +89,7 @@ export async function approveSourceContent(id, adminId) {
         fichierUrl: item.url,
         couvertureUrl: item.imageUrl,
         genre,
+        langue,
         duree: meta.duree || null,
         status: 'PUBLIE',
         publishedAt: new Date(),
@@ -112,6 +115,7 @@ export async function approveSourceContent(id, adminId) {
         miniatureUrl: item.imageUrl,
         artisteId: artiste.id,
         categorie: item.categorie,
+        langue,
         status: 'PUBLIE',
         publishedAt: new Date(),
         ajouteParId: adminId,

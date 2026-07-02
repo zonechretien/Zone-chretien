@@ -22,13 +22,14 @@ const extractEmbedId = (url, platform) => {
 
 router.get('/', optionalAuth, async (req, res, next) => {
   try {
-    const { page = 1, limit = 12, platform, artisteId, q } = req.query;
+    const { page = 1, limit = 12, platform, artisteId, langue, q } = req.query;
     const isAdmin = !!req.user;
     const skip = (parseInt(page) - 1) * parseInt(limit);
     const where = {
       ...(!isAdmin ? { status: 'PUBLIE' } : {}),
       ...(platform ? { platform } : {}),
       ...(artisteId ? { artisteId } : {}),
+      ...(langue ? { langue } : {}),
       ...(q ? { titre: { contains: q, mode: 'insensitive' } } : {}),
     };
     const [videos, total] = await Promise.all([
@@ -57,7 +58,7 @@ router.get('/:slug', optionalAuth, async (req, res, next) => {
 
 router.post('/', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.EDITEUR, ROLES.CONTRIBUTEUR), async (req, res, next) => {
   try {
-    const { titre, description, url, platform, miniatureUrl, artisteId, categorie, status } = req.body;
+    const { titre, description, url, platform, miniatureUrl, artisteId, categorie, langue, status } = req.body;
     let slug = makeSlug(titre);
     const exists = await prisma.video.findUnique({ where: { slug } });
     if (exists) slug = `${slug}-${Date.now()}`;
@@ -66,7 +67,7 @@ router.post('/', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.EDITEUR, ROLES
       data: {
         titre, slug, description, url, platform,
         embedId: extractEmbedId(url, platform),
-        miniatureUrl, artisteId, categorie,
+        miniatureUrl, artisteId, categorie, langue: langue || 'AUTRE',
         status: status || 'BROUILLON',
         publishedAt: status === 'PUBLIE' ? new Date() : null,
         ajouteParId: req.user.id,
@@ -79,13 +80,13 @@ router.post('/', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.EDITEUR, ROLES
 
 router.put('/:id', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.EDITEUR), async (req, res, next) => {
   try {
-    const { titre, description, url, platform, miniatureUrl, artisteId, categorie, status } = req.body;
+    const { titre, description, url, platform, miniatureUrl, artisteId, categorie, langue, status } = req.body;
     const video = await prisma.video.update({
       where: { id: req.params.id },
       data: {
         titre, description, url, platform,
         ...(url ? { embedId: extractEmbedId(url, platform) } : {}),
-        miniatureUrl, artisteId, categorie, status, updatedAt: new Date(),
+        miniatureUrl, artisteId, categorie, langue, status, updatedAt: new Date(),
       },
     });
     io.emit('content:update', { type: 'video', action: 'update', data: video });

@@ -11,7 +11,7 @@ const makeSlug = (s) => slugify(s, { lower: true, strict: true, locale: 'fr' });
 // GET /api/musiques
 router.get('/', optionalAuth, async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, artisteId, genre, albumId, q } = req.query;
+    const { page = 1, limit = 20, artisteId, genre, langue, albumId, q } = req.query;
     const isAdmin = !!req.user;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
@@ -19,6 +19,7 @@ router.get('/', optionalAuth, async (req, res, next) => {
       ...(!isAdmin ? { status: 'PUBLIE' } : {}),
       ...(artisteId ? { artisteId } : {}),
       ...(genre ? { genre } : {}),
+      ...(langue ? { langue } : {}),
       ...(albumId ? { albumId } : {}),
       ...(q ? { titre: { contains: q, mode: 'insensitive' } } : {}),
     };
@@ -96,13 +97,13 @@ router.get('/:slug', optionalAuth, async (req, res, next) => {
 // POST /api/musiques
 router.post('/', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.EDITEUR, ROLES.CONTRIBUTEUR), async (req, res, next) => {
   try {
-    const { titre, artisteId, albumId, genre, fichierUrl, couvertureUrl, paroles, dateSortie, telechargeablePublic, status } = req.body;
+    const { titre, artisteId, albumId, genre, langue, fichierUrl, couvertureUrl, paroles, dateSortie, telechargeablePublic, status } = req.body;
     let slug = makeSlug(titre);
     const exists = await prisma.musique.findUnique({ where: { slug } });
     if (exists) slug = `${slug}-${Date.now()}`;
 
     const musique = await prisma.musique.create({
-      data: { titre, slug, artisteId, albumId, genre, fichierUrl, couvertureUrl, paroles, dateSortie: dateSortie ? new Date(dateSortie) : null, telechargeablePublic: telechargeablePublic ?? true, status: status || 'BROUILLON', publishedAt: status === 'PUBLIE' ? new Date() : null, ajouteParId: req.user.id },
+      data: { titre, slug, artisteId, albumId, genre, langue: langue || 'AUTRE', fichierUrl, couvertureUrl, paroles, dateSortie: dateSortie ? new Date(dateSortie) : null, telechargeablePublic: telechargeablePublic ?? true, status: status || 'BROUILLON', publishedAt: status === 'PUBLIE' ? new Date() : null, ajouteParId: req.user.id },
       include: { artiste: { select: { id: true, nom: true } } },
     });
 
@@ -116,7 +117,7 @@ router.post('/', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.EDITEUR, ROLES
 // PUT /api/musiques/:id
 router.put('/:id', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.EDITEUR), async (req, res, next) => {
   try {
-    const { titre, artisteId, albumId, genre, fichierUrl, couvertureUrl, paroles, dateSortie, telechargeablePublic, status } = req.body;
+    const { titre, artisteId, albumId, genre, langue, fichierUrl, couvertureUrl, paroles, dateSortie, telechargeablePublic, status } = req.body;
 
     let slug;
     if (titre) {
@@ -130,7 +131,7 @@ router.put('/:id', authenticate, authorize(ROLES.SUPER_ADMIN, ROLES.EDITEUR), as
 
     const musique = await prisma.musique.update({
       where: { id: req.params.id },
-      data: { titre, slug, artisteId, albumId, genre, fichierUrl, couvertureUrl, paroles, dateSortie: dateSortie ? new Date(dateSortie) : undefined, telechargeablePublic, status, updatedAt: new Date() },
+      data: { titre, slug, artisteId, albumId, genre, langue, fichierUrl, couvertureUrl, paroles, dateSortie: dateSortie ? new Date(dateSortie) : undefined, telechargeablePublic, status, updatedAt: new Date() },
       include: { artiste: { select: { id: true, nom: true } } },
     });
     io.emit('content:update', { type: 'musique', action: 'update', data: musique });

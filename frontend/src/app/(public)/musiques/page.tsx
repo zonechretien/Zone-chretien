@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { Music, Play, Search, Headphones, Share2 } from 'lucide-react'
 import { musiquesAPI } from '@/lib/api'
@@ -17,19 +18,32 @@ const GENRES = [
   { label: 'Autre',               value: 'AUTRE' },
 ]
 
-export default function MusiquesPage() {
+const LANGUES = [
+  { label: 'Toutes',       value: 'Toutes', flag: '' },
+  { label: 'Kreyòl',       value: 'CREOLE', flag: '🇭🇹' },
+  { label: 'Français',     value: 'FRANCAIS', flag: '🇫🇷' },
+  { label: 'English',      value: 'ANGLAIS', flag: '🇺🇸' },
+  { label: 'Español',      value: 'ESPAGNOL', flag: '🇪🇸' },
+]
+
+function MusiquesPageContent() {
+  const searchParams = useSearchParams()
+  const initialLangue = searchParams.get('langue')?.toUpperCase() || 'Toutes'
+
   const [search, setSearch] = useState('')
   const [genre, setGenre] = useState('Tous')
+  const [langue, setLangue] = useState(LANGUES.some(l => l.value === initialLangue) ? initialLangue : 'Toutes')
   const [page, setPage] = useState(1)
   const { setQueue, currentTrack, isPlaying } = usePlayerStore()
 
   const { data, isLoading } = useQuery({
-    queryKey: ['musiques-public', page, search, genre],
+    queryKey: ['musiques-public', page, search, genre, langue],
     queryFn: () => musiquesAPI.list({
       page,
       limit: 20,
       q: search || undefined,
       genre: genre === 'Tous' ? undefined : genre,
+      langue: langue === 'Toutes' ? undefined : langue,
     }),
     select: r => ({
       musiques: (r.data?.data ?? []) as any[],
@@ -74,6 +88,19 @@ export default function MusiquesPage() {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        {/* Filtres langue */}
+        <div className="flex gap-2 flex-wrap mb-4">
+          {LANGUES.map(l => (
+            <button
+              key={l.value}
+              onClick={() => { setLangue(l.value); setPage(1) }}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${langue === l.value ? 'bg-gold-500 text-navy-900' : 'bg-navy-800 text-gray-300 hover:bg-navy-700'}`}
+            >
+              {l.flag && <span className="mr-1.5">{l.flag}</span>}{l.label}
+            </button>
+          ))}
+        </div>
+
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <div className="relative flex-1">
@@ -212,5 +239,13 @@ export default function MusiquesPage() {
         )}
       </div>
     </main>
+  )
+}
+
+export default function MusiquesPage() {
+  return (
+    <Suspense fallback={null}>
+      <MusiquesPageContent />
+    </Suspense>
   )
 }
