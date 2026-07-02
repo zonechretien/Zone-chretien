@@ -49,17 +49,18 @@ const SYS_SUGGESTIONS = `Tu es un expert passionné de musique chrétienne haït
 Tu analyses les tendances et fournis des recommandations concrètes pour enrichir une plateforme gospel.
 Réponds en français, de façon enthousiaste et pratique, en liste numérotée.`;
 
+// Seeds Picsum stables (toujours la même image pour le même seed)
 const TOPICS = [
-  { sujet: 'Un artiste gospel haïtien influent : son parcours, son impact spirituel et ses chansons phares', photo: 'gospel,worship,singer,music' },
-  { sujet: 'Le verset biblique de la semaine : méditation profonde sur la louange et l\'adoration', photo: 'bible,prayer,church,faith' },
-  { sujet: 'Actualité internationale : les tendances du gospel contemporain et leur influence en Haïti', photo: 'concert,gospel,music,crowd' },
-  { sujet: 'Un message d\'encouragement spirituel pour les chrétiens haïtiens face aux défis quotidiens', photo: 'light,hope,faith,prayer' },
-  { sujet: 'Histoire et héritage : les origines du gospel haïtien et son rayonnement mondial', photo: 'choir,church,gospel,heritage' },
-  { sujet: 'Jeunesse et foi : comment le gospel contemporain touche la nouvelle génération chrétienne', photo: 'worship,youth,music,church' },
-  { sujet: 'Focus sur un groupe de louange haïtien : ministère, albums et vision spirituelle', photo: 'worship,gospel,band,music' },
-  { sujet: 'La puissance de l\'adoration collective : témoignages et bienfaits du chant en communauté', photo: 'worship,community,prayer,church' },
-  { sujet: 'Portrait d\'un artiste évangélique haïtien de la diaspora et son influence internationale', photo: 'gospel,singer,music,stage' },
-  { sujet: 'Analyse spirituelle d\'un hymne traditionnel haïtien chanté dans les églises du monde entier', photo: 'hymn,choir,church,music' },
+  { sujet: 'Un artiste gospel haïtien influent : son parcours, son impact spirituel et ses chansons phares', seed: 'gospel-artist' },
+  { sujet: 'Le verset biblique de la semaine : méditation profonde sur la louange et l\'adoration', seed: 'bible-verse' },
+  { sujet: 'Actualité internationale : les tendances du gospel contemporain et leur influence en Haïti', seed: 'gospel-concert' },
+  { sujet: 'Un message d\'encouragement spirituel pour les chrétiens haïtiens face aux défis quotidiens', seed: 'faith-hope' },
+  { sujet: 'Histoire et héritage : les origines du gospel haïtien et son rayonnement mondial', seed: 'gospel-heritage' },
+  { sujet: 'Jeunesse et foi : comment le gospel contemporain touche la nouvelle génération chrétienne', seed: 'worship-youth' },
+  { sujet: 'Focus sur un groupe de louange haïtien : ministère, albums et vision spirituelle', seed: 'praise-worship' },
+  { sujet: 'La puissance de l\'adoration collective : témoignages et bienfaits du chant en communauté', seed: 'church-community' },
+  { sujet: 'Portrait d\'un artiste évangélique haïtien de la diaspora et son influence internationale', seed: 'gospel-singer' },
+  { sujet: 'Analyse spirituelle d\'un hymne traditionnel haïtien chanté dans les églises du monde entier', seed: 'church-hymn' },
 ];
 
 let topicIndex = 0;
@@ -78,7 +79,8 @@ export async function generatePublication({ force = false } = {}) {
   const topic = TOPICS[topicIndex % TOPICS.length];
   topicIndex++;
 
-  const imageUrl = `https://source.unsplash.com/800x400/?${topic.photo}`;
+  // Picsum : seed fixe par sujet → image cohérente et toujours disponible
+  const imageUrl = `https://picsum.photos/seed/${topic.seed}/800/400`;
   const raw = await generateText(SYS_PUBLICATION, `Rédige un article complet sur : ${topic.sujet}`, 4000);
 
   const data = extractJSON(raw);

@@ -1,7 +1,7 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import { publicationsAPI } from '@/lib/api'
 import { Calendar, ArrowRight } from 'lucide-react'
+import { PublicationImage } from '@/components/public/PublicationImage'
 
 export const revalidate = 60
 
@@ -38,14 +38,11 @@ export default async function ActualitesPage({ searchParams }: { searchParams: {
               <Link key={pub.id} href={`/actualites/${pub.slug}`}
                 className="group bg-navy-900 border border-navy-700 rounded-2xl overflow-hidden hover:border-gold-500/40 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-black/40">
                 <div className="relative h-48 bg-navy-800 overflow-hidden">
-                  {pub.imageUrl || pub.imageUne ? (
-                    <img src={pub.imageUrl || pub.imageUne} alt={pub.titre}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-navy-800 to-navy-700">
-                      <span className="font-bebas text-6xl text-navy-600">GS</span>
-                    </div>
-                  )}
+                  <PublicationImage
+                    src={pub.imageUrl || pub.imageUne}
+                    alt={pub.titre}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                 </div>
                 <div className="p-5">
                   {pub.categorie && (
