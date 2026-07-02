@@ -95,11 +95,11 @@ export function PublicFooter() {
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
                 <Phone className="w-4 h-4 text-gold-500 shrink-0" />
-                <a href="tel:+50912345678" className="hover:text-white transition-colors">+509 12 34 56 78</a>
+                <a href="tel:+50936715275" className="hover:text-white transition-colors">+509 36715275</a>
               </li>
               <li className="flex items-center gap-3 text-sm text-gray-400">
                 <Mail className="w-4 h-4 text-gold-500 shrink-0" />
-                <a href="mailto:contact@glorysound.ht" className="hover:text-white transition-colors">contact@glorysound.ht</a>
+                <a href="mailto:contact.zonechretien@gmail.com" className="hover:text-white transition-colors">contact.zonechretien@gmail.com</a>
               </li>
             </ul>
           </div>
