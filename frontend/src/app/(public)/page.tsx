@@ -53,12 +53,12 @@ export default async function HomePage() {
   return (
     <main>
       <HeroSection latestMusic={musiques[0]} latestEvent={evenements[0]} />
-      <Top50Gospel tracks={top50Tracks} weekNumber={top50Week} preview />
       <LatestMusicSection musiques={musiques} />
       <LatestVideosSection videos={videos} />
       <FeaturedArtistsSection artistes={artistes} />
       <UpcomingEventsSection evenements={evenements} />
       <LatestNewsSection publications={publications} />
+      <Top50Gospel tracks={top50Tracks} weekNumber={top50Week} preview />
       <NewsletterSection />
     </main>
   );
