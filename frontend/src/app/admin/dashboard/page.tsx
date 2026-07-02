@@ -28,10 +28,10 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="font-display text-2xl font-bold" style={{ color: 'var(--navy)' }}>
+          <h1 className="font-display text-2xl font-bold" style={{ color: 'rgba(255,255,255,.9)' }}>
             Bonjour, <span style={{ color: 'var(--gold)' }}>{user?.prenom}</span> 👋
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--gray)' }}>
+          <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,.45)' }}>
             {new Date().toLocaleDateString('fr', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
