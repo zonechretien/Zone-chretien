@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Music, Play, Search, Headphones } from 'lucide-react'
+import { Music, Play, Search, Headphones, Share2 } from 'lucide-react'
 import { musiquesAPI } from '@/lib/api'
 import { usePlayerStore } from '@/lib/store/playerStore'
+import toast from 'react-hot-toast'
 
 const GENRES = [
   { label: 'Tous',               value: 'Tous' },
@@ -55,6 +56,12 @@ export default function MusiquesPage() {
   }
 
   const totalPages = data?.meta?.pages ?? 1
+
+  const handleShare = (slug: string, titre: string) => {
+    navigator.clipboard.writeText(`${window.location.origin}/musiques/${slug}`)
+      .then(() => toast.success(`Lien de "${titre}" copié !`))
+      .catch(() => toast.error('Impossible de copier le lien'))
+  }
 
   return (
     <main className="min-h-screen bg-navy-950 pb-28">
@@ -169,6 +176,15 @@ export default function MusiquesPage() {
 
                     {/* Durée */}
                     <span className="text-xs text-gray-400 shrink-0 w-10 text-right">{formatDuree(m.duree)}</span>
+
+                    {/* Partage */}
+                    <button
+                      onClick={e => { e.stopPropagation(); handleShare(m.slug, m.titre) }}
+                      title="Copier le lien"
+                      className="p-1.5 rounded-lg text-gray-500 hover:text-gold-400 hover:bg-navy-700 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 )
               })}

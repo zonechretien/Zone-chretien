@@ -4,8 +4,9 @@ import { useParams, notFound } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import { artistesAPI } from '@/lib/api'
 import { usePlayerStore } from '@/lib/store/playerStore'
-import { Play, Facebook, Youtube, Instagram, ArrowLeft, Music, ExternalLink } from 'lucide-react'
+import { Play, Facebook, Youtube, Instagram, ArrowLeft, Music, Share2, Headphones } from 'lucide-react'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 function getTrackPlatform(url?: string): 'soundcloud' | 'youtube' | null {
   if (!url) return null
@@ -93,6 +94,12 @@ export default function ArtisteDetailPage() {
               <Play size={16} fill="#0A1628" /> Tout écouter
             </button>
           )}
+          <button
+            onClick={() => navigator.clipboard.writeText(window.location.href).then(() => toast.success('Lien copié !'))}
+            style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', border: 'none', cursor: 'pointer' }}
+            title="Partager">
+            <Share2 size={18} />
+          </button>
           <div style={{ display: 'flex', gap: '10px' }}>
             {artiste.facebook && (
               <a href={artiste.facebook} target="_blank" rel="noopener noreferrer"
@@ -147,6 +154,12 @@ export default function ArtisteDetailPage() {
                       <p style={{ color: 'white', fontSize: '14px', fontWeight: 500, margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.titre}</p>
                       <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', margin: '2px 0 0' }}>{m.genre?.replace(/_/g, ' ')}</p>
                     </div>
+                    {m.ecoutes > 0 && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'rgba(255,255,255,0.3)', fontSize: '12px', flexShrink: 0 }}>
+                        <Headphones size={12} />
+                        {m.ecoutes.toLocaleString()}
+                      </span>
+                    )}
                     {(() => {
                       const platform = getTrackPlatform(m.fichierUrl || m.audioUrl)
                       if (platform === 'soundcloud') return (

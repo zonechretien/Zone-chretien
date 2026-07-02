@@ -11,6 +11,7 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import { rateLimit } from 'express-rate-limit';
+import path from 'path';
 
 import { prisma } from './config/database.js';
 import { logger } from './utils/logger.js';
@@ -68,6 +69,9 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Serve locally uploaded files
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // ── Rate Limiting ─────────────────────────────────────────────
 const limiter = rateLimit({

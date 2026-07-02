@@ -46,8 +46,7 @@ router.get('/:slug', async (req, res, next) => {
         musiques: {
           where: { status: 'PUBLIE' },
           orderBy: { ecoutes: 'desc' },
-          take: 10,
-          select: { id: true, titre: true, slug: true, fichierUrl: true, couvertureUrl: true, duree: true, ecoutes: true },
+          select: { id: true, titre: true, slug: true, fichierUrl: true, couvertureUrl: true, duree: true, ecoutes: true, genre: true },
         },
         videos: {
           where: { status: 'PUBLIE' },

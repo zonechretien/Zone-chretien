@@ -45,10 +45,54 @@ async function main() {
     { nom: 'Chorale Gloire', slug: 'chorale-gloire', genre: 'GOSPEL_HAITIEN', biographie: 'Chorale de 40 voix spécialisée dans le gospel haïtien.', featured: false },
   ];
 
+  const artistesMap = {};
   for (const artiste of artistes) {
-    await prisma.artiste.upsert({ where: { slug: artiste.slug }, update: {}, create: artiste });
+    const a = await prisma.artiste.upsert({ where: { slug: artiste.slug }, update: {}, create: artiste });
+    artistesMap[artiste.slug] = a;
   }
   console.log('✅ Artistes créés');
+
+  // ── Musiques exemples ────────────────────────────────────────
+  const musiquesExemples = [
+    {
+      titre: 'Gloire à Dieu dans les Cieux',
+      slug: 'gloire-a-dieu-dans-les-cieux',
+      fichierUrl: '',
+      couvertureUrl: 'https://picsum.photos/seed/glory1/400/400',
+      genre: 'GOSPEL_HAITIEN',
+      status: 'PUBLIE',
+      publishedAt: new Date(),
+      ajouteParId: admin.id,
+      artisteId: artistesMap['reveil-karimi'].id,
+    },
+    {
+      titre: 'Tu es Saint Éternel',
+      slug: 'tu-es-saint-eternel',
+      fichierUrl: '',
+      couvertureUrl: 'https://picsum.photos/seed/glory2/400/400',
+      genre: 'LOUANGE_ADORATION',
+      status: 'PUBLIE',
+      publishedAt: new Date(),
+      ajouteParId: admin.id,
+      artisteId: artistesMap['groupe-elohim'].id,
+    },
+    {
+      titre: 'Hosanna au Plus Haut',
+      slug: 'hosanna-au-plus-haut',
+      fichierUrl: '',
+      couvertureUrl: 'https://picsum.photos/seed/glory3/400/400',
+      genre: 'CHORALE',
+      status: 'PUBLIE',
+      publishedAt: new Date(),
+      ajouteParId: admin.id,
+      artisteId: artistesMap['chorale-gloire'].id,
+    },
+  ];
+
+  for (const m of musiquesExemples) {
+    await prisma.musique.upsert({ where: { slug: m.slug }, update: {}, create: m });
+  }
+  console.log('✅ Musiques exemples créées');
 
   // ── SEO settings ────────────────────────────────────────────
   const seoSettings = [

@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Edit2, Trash2, Music, Play, X, Save, Loader2, Headphones } from 'lucide-react'
-import { musiquesAPI, artistesAPI } from '@/lib/api'
+import { Plus, Search, Edit2, Trash2, Music, Play, X, Save, Loader2, Headphones, Upload } from 'lucide-react'
+import { musiquesAPI, artistesAPI, api } from '@/lib/api'
 import { usePlayerStore } from '@/lib/store/playerStore'
 import toast from 'react-hot-toast'
 
@@ -23,6 +23,33 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
   )
 }
 
+function UploadField({
+  label, required, accept, value, onChange, uploading, onFileChange, placeholder,
+}: {
+  label: string; required?: boolean; accept: string; value: string; onChange: (v: string) => void;
+  uploading: boolean; onFileChange: (f: File) => void; placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-300 mb-1.5">{label}{required && ' *'}</label>
+      <div className="flex gap-2 items-center">
+        <label className="flex items-center gap-2 px-3 py-2.5 bg-navy-700 border border-navy-600 rounded-xl text-gray-300 cursor-pointer hover:bg-navy-600 transition-colors text-sm whitespace-nowrap shrink-0">
+          {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+          {uploading ? 'Upload…' : 'Choisir'}
+          <input type="file" accept={accept} className="hidden"
+            onChange={e => e.target.files?.[0] && onFileChange(e.target.files[0])} />
+        </label>
+        <input value={value} onChange={e => onChange(e.target.value)}
+          placeholder={placeholder || 'ou coller une URL…'}
+          className="flex-1 px-4 py-2.5 bg-navy-800 border border-navy-600 rounded-xl text-white focus:outline-none focus:border-gold-500 transition-colors text-sm" />
+      </div>
+      {value && (
+        <p className="text-xs text-green-400 mt-1 truncate">✓ {value}</p>
+      )}
+    </div>
+  )
+}
+
 function MusiqueForm({ initial, artistes, onSave, onClose }: any) {
   const [form, setForm] = useState({
     titre: initial?.titre || '',
@@ -36,6 +63,25 @@ function MusiqueForm({ initial, artistes, onSave, onClose }: any) {
     estEnVedette: false,
   })
   const [saving, setSaving] = useState(false)
+  const [uploadingAudio, setUploadingAudio] = useState(false)
+  const [uploadingCover, setUploadingCover] = useState(false)
+
+  const uploadFile = async (file: File, field: 'audioUrl' | 'coverUrl') => {
+    const setUploading = field === 'audioUrl' ? setUploadingAudio : setUploadingCover
+    setUploading(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      fd.append('folder', field === 'audioUrl' ? 'audio' : 'covers')
+      const res = await api.post('/media/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+      setForm(prev => ({ ...prev, [field]: res.data.url }))
+      toast.success(field === 'audioUrl' ? 'Audio uploadé !' : 'Image uploadée !')
+    } catch {
+      toast.error('Erreur lors de l\'upload')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -51,6 +97,7 @@ function MusiqueForm({ initial, artistes, onSave, onClose }: any) {
           <input required value={form.titre} onChange={e => setForm({ ...form, titre: e.target.value })}
             className="w-full px-4 py-2.5 bg-navy-800 border border-navy-600 rounded-xl text-white focus:outline-none focus:border-gold-500 transition-colors" />
         </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1.5">Artiste *</label>
           <select required value={form.artisteId} onChange={e => setForm({ ...form, artisteId: e.target.value })}
@@ -64,6 +111,7 @@ function MusiqueForm({ initial, artistes, onSave, onClose }: any) {
             ))}
           </select>
         </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-1.5">Genre</label>
           <select value={form.genre} onChange={e => setForm({ ...form, genre: e.target.value })}
@@ -81,42 +129,62 @@ function MusiqueForm({ initial, artistes, onSave, onClose }: any) {
             )}
           </select>
         </div>
+
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-300 mb-1.5">URL Audio *</label>
-          <input required value={form.audioUrl} onChange={e => setForm({ ...form, audioUrl: e.target.value })}
-            placeholder="https://..."
-            className="w-full px-4 py-2.5 bg-navy-800 border border-navy-600 rounded-xl text-white focus:outline-none focus:border-gold-500 transition-colors" />
+          <UploadField
+            label="Fichier Audio" required
+            accept="audio/mpeg,audio/mp3,audio/*"
+            value={form.audioUrl}
+            onChange={v => setForm({ ...form, audioUrl: v })}
+            uploading={uploadingAudio}
+            onFileChange={f => uploadFile(f, 'audioUrl')}
+            placeholder="ou coller une URL MP3 / SoundCloud…"
+          />
         </div>
+
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1.5">URL Cover</label>
-          <input value={form.coverUrl} onChange={e => setForm({ ...form, coverUrl: e.target.value })}
-            placeholder="https://..."
-            className="w-full px-4 py-2.5 bg-navy-800 border border-navy-600 rounded-xl text-white focus:outline-none focus:border-gold-500 transition-colors" />
+          <UploadField
+            label="Image de couverture"
+            accept="image/jpeg,image/png,image/webp,image/*"
+            value={form.coverUrl}
+            onChange={v => setForm({ ...form, coverUrl: v })}
+            uploading={uploadingCover}
+            onFileChange={f => uploadFile(f, 'coverUrl')}
+            placeholder="ou coller une URL image…"
+          />
+          {form.coverUrl && (
+            <img src={form.coverUrl} alt="" className="w-20 h-20 rounded-xl object-cover mt-2" />
+          )}
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1.5">Durée (sec)</label>
-          <input type="number" value={form.duree} onChange={e => setForm({ ...form, duree: e.target.value })}
-            className="w-full px-4 py-2.5 bg-navy-800 border border-navy-600 rounded-xl text-white focus:outline-none focus:border-gold-500 transition-colors" />
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Durée (sec)</label>
+            <input type="number" value={form.duree} onChange={e => setForm({ ...form, duree: e.target.value })}
+              className="w-full px-4 py-2.5 bg-navy-800 border border-navy-600 rounded-xl text-white focus:outline-none focus:border-gold-500 transition-colors" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">Année</label>
+            <input type="number" value={form.annee} onChange={e => setForm({ ...form, annee: e.target.value })}
+              className="w-full px-4 py-2.5 bg-navy-800 border border-navy-600 rounded-xl text-white focus:outline-none focus:border-gold-500 transition-colors" />
+          </div>
+          <div className="flex items-center gap-3 pt-1">
+            <input type="checkbox" id="vedette" checked={form.estEnVedette} onChange={e => setForm({ ...form, estEnVedette: e.target.checked })}
+              className="w-4 h-4 rounded accent-gold-500" />
+            <label htmlFor="vedette" className="text-sm text-gray-300">En vedette</label>
+          </div>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-1.5">Année</label>
-          <input type="number" value={form.annee} onChange={e => setForm({ ...form, annee: e.target.value })}
-            className="w-full px-4 py-2.5 bg-navy-800 border border-navy-600 rounded-xl text-white focus:outline-none focus:border-gold-500 transition-colors" />
-        </div>
-        <div className="flex items-center gap-3 pt-2">
-          <input type="checkbox" id="vedette" checked={form.estEnVedette} onChange={e => setForm({ ...form, estEnVedette: e.target.checked })}
-            className="w-4 h-4 rounded accent-gold-500" />
-          <label htmlFor="vedette" className="text-sm text-gray-300">En vedette</label>
-        </div>
+
         <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-300 mb-1.5">Paroles</label>
           <textarea rows={5} value={form.paroles} onChange={e => setForm({ ...form, paroles: e.target.value })}
             className="w-full px-4 py-2.5 bg-navy-800 border border-navy-600 rounded-xl text-white focus:outline-none focus:border-gold-500 transition-colors resize-y text-sm" />
         </div>
       </div>
+
       <div className="flex gap-3 pt-2">
         <button type="button" onClick={onClose} className="flex-1 py-2.5 border border-navy-600 text-gray-300 hover:text-white rounded-xl transition-colors">Annuler</button>
-        <button type="submit" disabled={saving}
+        <button type="submit" disabled={saving || uploadingAudio || uploadingCover}
           className="flex-1 py-2.5 bg-gold-500 hover:bg-gold-400 disabled:opacity-50 text-navy-900 font-bold rounded-xl transition-colors flex items-center justify-center gap-2">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
           {saving ? 'Enregistrement…' : 'Enregistrer'}
